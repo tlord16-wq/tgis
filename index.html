@@ -1387,45 +1387,7 @@ function showMyBidUI() {
   }
 }
 
-function showDiscardUI() {
-  const hand = G.hands[mySeat];
-  const btns = hand.map((c,i)=>{
-    const isT = effSuit(c,G.trump)===G.trump;
-    const isRed = c.s==='H'||c.s==='D';
-    return `<button class="mbtn mbtn-discard ${isRed?'is-red':''} ${isT?'is-trump':''}" onclick="window.humanDiscard(${i})">${c.r}${SYM[c.s]}${isT?' ★':''}</button>`;
-  }).join('');
-  const pu = hand[hand.length-1];
-  openActionPanel(`
-    <h2>Discard a Card</h2>
-    <p>You picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p>
-    <p style="font-size:0.82rem;color:var(--gold)">✦ mystery cannot be discarded. Trump marked ★</p>
-    <div class="btn-row">${btns}</div>
-  `);
-}
 
-function showGameOver(ng) {
-  const hr = ng.lastHandResult;
-  const mt = hr ? hr.mt : 0;
-  const ot = 1-mt;
-  let result = '', emoji = '🎉';
-  if (hr) {
-    if (hr.tricks >= 3) {
-      if (hr.pts[mt] === 6) { result = `${NAME[hr.loner]} went ALONE and swept! 6 pts!`; emoji = '🌟'; }
-      else if (hr.tricks === 5) { result = `${TEAM[mt]===0?NAME.south+' & '+NAME.north:NAME.west+' & '+NAME.east} swept!`; }
-      else result = `Makers got ${hr.tricks} tricks.`;
-    } else { result = 'EUCHRED!'; emoji = '😬'; }
-  }
-  const winStr = ng.scores[0] >= 10
-    ? `${NAME.south} &amp; ${NAME.north} WIN! 🏆`
-    : `${NAME.west} &amp; ${NAME.east} win.`;
-  openModal(`
-    <h2>Game Over ${emoji}</h2>
-    <p>${result}</p>
-    <p style="margin:10px 0;font-size:1.1rem">Final: <b>${ng.scores[0]}</b> — <b>${ng.scores[1]}</b></p>
-    <p style="color:var(--gold-bright);font-size:1.1rem;font-family:'Playfair Display',serif">${winStr}</p>
-    <div class="btn-row"><button class="mbtn mbtn-newgame" onclick="window.closeModal();window.returnToTables()">Back to Tables</button></div>
-  `);
-}
 
   function buildNameMap(seats){
     const used=ALL_P.map(s=>seats[s]?.name).filter(Boolean);
