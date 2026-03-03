@@ -1544,9 +1544,9 @@ async function processAI(ng){
   }
   if(ng.phase==='bid'){
     const b=ng.bidOrder?.[ng.bidIdx];
-    if(b&&!roomSeats[b]?.human){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+    if(b&&!roomSeats[b]){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
   }
-  if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]?.human){
+  if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]){
     await sleep(800);doAIPlayOnState(ng,ng.current);await pushG(ng);processAI(ng);return;
   }
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
