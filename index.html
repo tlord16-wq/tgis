@@ -623,6 +623,13 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase
 import {getDatabase,ref,set,get,update,onValue,off,remove,serverTimestamp}
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+// dbg available inside module too
+function dbg(msg) {
+  const el = document.getElementById('debug');
+  if (el) { el.style.display='block'; el.textContent=msg; }
+  console.log('[TGIS]', msg);
+}
+
 // Show any error visibly
 window.onerror = function(msg, src, line) {
   document.getElementById('debug').style.display = 'block';
@@ -634,6 +641,10 @@ window.onerror = function(msg, src, line) {
 try {
   document.getElementById('debug').style.display = 'block';
   document.getElementById('debug').textContent = 'Loading Firebase...';
+  
+  // Local dbg for module scope
+  const dbg = msg => { const el=document.getElementById('debug'); if(el){el.style.display='block';el.textContent=msg;} console.log('[TGIS]',msg); };
+  
   const app = initializeApp({
     apiKey:"AIzaSyDDGy2IbSpHBsOFV7seHCw1d2oChHJaxQo",
     authDomain:"thisgameisstupid-9d565.firebaseapp.com",
