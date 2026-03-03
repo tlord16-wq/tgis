@@ -403,24 +403,23 @@ body {
  <div id="lbox">
   <div class="ltitle">THIS GAME IS STUPID</div>
   <div class="lsub">Modified Euchre · Mystery Card Edition</div>
-
   <div id="scr-name" class="scr active">
    <div style="font-family:'Playfair Display',serif;color:#c9a84c;margin-bottom:8px;">Enter Your Name</div>
    <input id="inp-name" class="linput" placeholder="Your name" maxlength="12">
    <button class="lbtn lbtn-gold" id="cont-btn">Continue →</button>
    <div id="name-err" class="lerr"></div>
   </div>
-
   <div id="scr-tables" class="scr">
    <div style="color:#c9a84c;margin-bottom:14px;font-family:'Crimson Text',serif;font-size:0.95rem;">
     Welcome, <strong id="name-show" style="font-family:'Playfair Display',serif;color:#f0cc70;"></strong>! Pick a seat.
    </div>
    <div id="tables-list"></div>
-   <button class="lbtn lbtn-dim" id="back-btn" style="width:auto;padding:8px 20px;display:inline-block;margin-top:10px;">← Change Name</button>
-   <button class="lbtn lbtn-dim" onclick="resetAllTables()" style="width:auto;padding:8px 20px;display:inline-block;margin-top:6px;border-color:rgba(255,80,80,0.4)!important;color:#ff8080;">✕ Reset Stuck Tables</button>
-   <div id="tbl-status" class="lerr" style="color:#7a5e22;margin-top:6px;"></div>
+   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
+    <button class="lbtn lbtn-dim" id="back-btn" style="width:auto;padding:8px 20px;">← Change Name</button>
+    <button class="lbtn lbtn-dim" id="reset-btn" style="width:auto;padding:8px 20px;border-color:rgba(255,80,80,0.4)!important;color:#ff8080;">✕ Reset Tables</button>
+   </div>
+   <div id="tbl-status" style="color:#7a5e22;font-size:0.82rem;margin-top:6px;font-style:italic;"></div>
   </div>
-
   <div id="scr-seated" class="scr">
    <div id="seated-tname" style="font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.3rem;letter-spacing:1px;margin-bottom:4px;"></div>
    <div style="color:#c9a84c;font-family:'Crimson Text',serif;font-size:0.9rem;margin-bottom:12px;">
@@ -438,184 +437,153 @@ body {
 <div id="debug"></div>
 
 <script>
-// ── CONFIG ──
-const TBLS = [
+const TBLS=[
   {id:'founders',    label:'♠ Founders'},
   {id:'open',        label:'♠ Open Table'},
   {id:'lordsarcade', label:"♠ Lord's Arcade"},
 ];
-const SEATS = ['south','west','north','east'];
-const SLBL  = {south:'South',north:'North',west:'West',east:'East'};
+const SEATS=['south','west','north','east'];
+const SLBL={south:'South',north:'North',west:'West',east:'East'};
+let myName='';
 
-let myId   = 'p_' + Math.random().toString(36).slice(2,10);
-let myName = '', mySeat = null, myTable = null;
-
-function dbg(msg) {
-  const el = document.getElementById('debug');
-  el.style.display = 'block';
-  el.textContent = msg;
+function dbg(msg){
+  const el=document.getElementById('debug');
+  if(el){el.style.display='block';el.textContent=msg;}
+  console.log('[TGIS]',msg);
 }
 
-// ── SCREENS ──
-function showScr(id) {
+function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
   document.getElementById('scr-'+id).classList.add('active');
 }
 
-// ── NAME SCREEN ──
-document.getElementById('cont-btn').onclick = function() {
-  const n = document.getElementById('inp-name').value.trim();
-  if (!n) { document.getElementById('name-err').textContent = 'Please enter your name.'; return; }
-  document.getElementById('name-err').textContent = '';
-  myName = n;
-  window._myName = n;
-  try { sessionStorage.setItem('tgis_name', n); } catch(e) {}
-  document.getElementById('name-show').textContent = n;
+// Wire buttons
+document.getElementById('cont-btn').onclick=function(){
+  const n=document.getElementById('inp-name').value.trim();
+  if(!n){document.getElementById('name-err').textContent='Please enter your name.';return;}
+  document.getElementById('name-err').textContent='';
+  myName=n;
+  window._myName=n;
+  try{sessionStorage.setItem('tgis_name',n);}catch(e){}
+  document.getElementById('name-show').textContent=n;
   showScr('tables');
   renderTablesSkeleton();
   if(window.fbLoadTables) window.fbLoadTables();
 };
-// Pre-fill name from session
-try {
-  const saved = sessionStorage.getItem('tgis_name');
-  if (saved) document.getElementById('inp-name').value = saved;
-} catch(e) {}
-document.getElementById('inp-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('cont-btn').click(); });
-document.getElementById('back-btn').onclick = function() { showScr('name'); stopTableListener(); };
-document.getElementById('start-btn').onclick = function() { fbStartGame(); };
-document.getElementById('leave-btn').onclick = function() { fbLeaveSeat(); };
+document.getElementById('inp-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('cont-btn').click();});
+document.getElementById('back-btn').onclick=function(){showScr('name');if(window.stopTableListener)window.stopTableListener();};
+document.getElementById('reset-btn').onclick=function(){
+  if(!confirm('Reset all tables?'))return;
+  ['founders','open','lordsarcade'].forEach(id=>{if(window.fbClearTable)window.fbClearTable(id);});
+};
+document.getElementById('start-btn').onclick=function(){if(window.fbStartGame)window.fbStartGame();};
+document.getElementById('leave-btn').onclick=function(){if(window.fbLeaveSeat)window.fbLeaveSeat();};
 
-// ── TABLE SKELETON ──
-function renderTablesSkeleton() {
-  const el = document.getElementById('tables-list');
-  el.innerHTML = '';
-  TBLS.forEach(t => {
-    const card = document.createElement('div');
-    card.className = 'tcard';
-    card.innerHTML =
-      '<div class="tname" id="tname-'+t.id+'">'+t.label+
-      ' <span class="tbadge b-empty" id="tbadge-'+t.id+'">Connecting…</span>'+
-      ' <button id="clear-'+t.id+'" onclick="clearTable(\''+t.id+'\')" style="display:none;margin-left:auto;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);color:#ff8080;font-size:0.65rem;padding:2px 8px;border-radius:6px;cursor:pointer;">✕ Clear</button>'+
-      '</div>'+
+// Pre-fill saved name
+try{const s=sessionStorage.getItem('tgis_name');if(s)document.getElementById('inp-name').value=s;}catch(e){}
+
+function renderTablesSkeleton(){
+  const el=document.getElementById('tables-list');
+  el.innerHTML='';
+  TBLS.forEach(t=>{
+    const card=document.createElement('div');
+    card.className='tcard';
+    card.innerHTML='<div class="tname">'+t.label+' <span class="tbadge b-empty" id="tbadge-'+t.id+'">Connecting…</span></div>'+
       '<div class="sgrid" id="sgrid-'+t.id+'">'+
-        SEATS.map(s=>'<div class="stile" id="st-'+t.id+'-'+s+'" data-table="'+t.id+'" data-seat="'+s+'">'+
-          '<span class="spos">'+SLBL[s]+'</span><span class="sopen">—</span></div>').join('')+
+      SEATS.map(s=>'<div class="stile" id="st-'+t.id+'-'+s+'"><span class="spos">'+SLBL[s]+'</span><span class="sopen">—</span></div>').join('')+
       '</div>';
     el.appendChild(card);
-    SEATS.forEach(s => {
-      document.getElementById('st-'+t.id+'-'+s).onclick = function() { fbClaimSeat(t.id, s); };
-    });
   });
 }
 
-function updateTableUI(tableId, data) {
-  const seats = data?.seats || {};
-  const phase = data?.phase || 'lobby';
-  const n = SEATS.filter(s=>seats[s]).length;
-  const tbl = TBLS.find(t=>t.id===tableId);
-  
-  const badge = document.getElementById('tbadge-'+tableId);
-  if (badge) {
-    let txt='', cls='';
-    if (phase==='playing'){txt='In Progress';cls='b-play';}
-    else if (n===0){txt='Empty';cls='b-empty';}
-    else {txt=n+' seated';cls='b-wait';}
-    badge.textContent=txt; badge.className='tbadge '+cls;
+function updateTableUI(tableId,data){
+  const seats=(data&&data.seats)||{};
+  const phase=(data&&data.phase)||'lobby';
+  const n=SEATS.filter(s=>seats[s]).length;
+  const badge=document.getElementById('tbadge-'+tableId);
+  if(badge){
+    let txt='',cls='';
+    if(phase==='playing'){txt='In Progress';cls='b-play';}
+    else if(n===0){txt='Empty';cls='b-empty';}
+    else{txt=n+' seated';cls='b-wait';}
+    badge.textContent=txt;badge.className='tbadge '+cls;
   }
-  const clearBtn = document.getElementById('clear-'+tableId);
-  if (clearBtn) clearBtn.style.display = (phase==='playing'||n>0) ? 'inline-block' : 'none';
-  // Show/hide clear button
-  const clearBtn2 = document.getElementById('clear-'+tableId);
-  if (clearBtn) clearBtn.style.display = (phase==='playing'||n>0) ? 'inline-block' : 'none';
-
-  SEATS.forEach(s => {
-    const tile = document.getElementById('st-'+tableId+'-'+s);
-    if (!tile) return;
-    const occ = seats[s];
-    const isMe = occ?.id === myId;
-    tile.className = 'stile'+(isMe?' me':occ?' tk':'');
-    if (isMe) {
+  SEATS.forEach(s=>{
+    const tile=document.getElementById('st-'+tableId+'-'+s);
+    if(!tile)return;
+    const occ=seats[s];
+    const isMe=occ&&occ.id===window._playerId;
+    tile.className='stile'+(isMe?' me':occ?' tk':'');
+    if(isMe){
       tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho">You ✓</span>';
-      tile.onclick = null;
-    } else if (occ) {
+      tile.onclick=null;
+    }else if(occ){
       tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho">'+occ.name+'</span>';
-      tile.onclick = null;
-    } else if (phase==='playing') {
+      tile.onclick=null;
+    }else if(phase==='playing'){
       tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho ai">AI</span>';
-      tile.onclick = null;
-    } else {
+      tile.onclick=null;
+    }else{
       tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="sopen">Sit here</span>';
-      tile.onclick = function() { fbClaimSeat(tableId, s); };
+      tile.onclick=function(){
+        const nm=window._myName||myName;
+        if(!nm){showScr('name');return;}
+        if(window.fbClaimSeat)window.fbClaimSeat(tableId,s,nm);
+        else dbg('Firebase not ready yet');
+      };
     }
   });
 }
 
-// ── SEATED VIEW ──
-function showSeatedView(tableId, seat, data) {
+function showSeatedView(tableId,seat,data){
   showScr('seated');
-  const tbl = TBLS.find(t=>t.id===tableId);
-  document.getElementById('seated-tname').textContent = tbl ? tbl.label : tableId;
-  document.getElementById('seated-sname').textContent = SLBL[seat] || seat;
+  const tbl=TBLS.find(t=>t.id===tableId);
+  document.getElementById('seated-tname').textContent=tbl?tbl.label:tableId;
+  document.getElementById('seated-sname').textContent=SLBL[seat]||seat;
   updateSeatedList(data);
 }
 
-function updateSeatedList(data) {
-  const seats = data?.seats || {};
-  const list = document.getElementById('seated-list');
-  list.innerHTML = '';
-  SEATS.forEach(s => {
-    const li = document.createElement('li');
-    const occ = seats[s];
-    if (occ) {
-      li.innerHTML='<span class="pdot"></span>'+occ.name+(occ.id===myId?' <b>(You)</b>':'')+' — '+SLBL[s];
-    } else {
-      li.innerHTML='<span class="pdot ai"></span>AI — '+SLBL[s];
-      li.style.opacity='0.5';
-    }
+function updateSeatedList(data){
+  const seats=(data&&data.seats)||{};
+  const list=document.getElementById('seated-list');
+  list.innerHTML='';
+  SEATS.forEach(s=>{
+    const li=document.createElement('li');
+    const occ=seats[s];
+    if(occ){li.innerHTML='<span class="pdot"></span>'+occ.name+(occ.id===window._playerId?' <b>(You)</b>':'')+' — '+SLBL[s];}
+    else{li.innerHTML='<span class="pdot ai"></span>AI — '+SLBL[s];li.style.opacity='0.5';}
     list.appendChild(li);
   });
-  const n = SEATS.filter(s=>seats[s]).length;
-  document.getElementById('seated-status').textContent = n+'/4 humans — empty seats will be AI.';
-  document.getElementById('start-btn').style.display = 'block';
+  const n=SEATS.filter(s=>seats[s]).length;
+  document.getElementById('seated-status').textContent=n+'/4 humans — empty seats will be AI.';
+  document.getElementById('start-btn').style.display='block';
 }
 
-// ── GAME SCREEN HELPERS ──
-function hideLobby(){ document.getElementById('lobby').style.display='none'; }
-function showLobby(){ document.getElementById('lobby').style.display='flex'; showScr('name'); }
-function toggleHelp(){ document.getElementById('help-panel').classList.toggle('open'); }
-function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
-function openModal(html){ document.getElementById('modal-box').innerHTML=html; document.getElementById('overlay').classList.add('open'); }
-function openActionPanel(html){ const p=document.getElementById('action-panel'); p.innerHTML=html; p.classList.add('open'); }
-function closeActionPanel(){ const p=document.getElementById('action-panel'); p.classList.remove('open'); p.innerHTML=''; }
-function setMsg(t){ const el=document.getElementById('msg-bar'); if(el) el.textContent=t; }
-function returnToTables(){ fbReturnToTables(); }
-
-function humanBidOrder(a){window._hBO&&window._hBO(a);}
-function humanBidPass1(){window._hBP1&&window._hBP1();}
-function humanBidPass2(){window._hBP2&&window._hBP2();}
-function humanNameSuit(s){window._hNS&&window._hNS(s);}
-function humanNameSuitAlone(s){window._hNSA&&window._hNSA(s);}
-function humanDiscard(i){window._hD&&window._hD(i);}
-function humanStuckName(s){window._hSN&&window._hSN(s);}
-function humanTradeKittyAction(){window._hTK&&window._hTK();}
-
-function clearTable(tableId) {
-  if (window.fbClearTable) window.fbClearTable(tableId);
-}
-function resetAllTables() {
-  if (!confirm('Reset all stuck tables?')) return;
-  ['founders','open','lordsarcade'].forEach(id => {
-    if (window.fbClearTable) window.fbClearTable(id);
-  });
-}
-
+// Game helpers
+function hideLobby(){document.getElementById('lobby').style.display='none';}
+function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name');}
+function toggleHelp(){document.getElementById('help-panel').classList.toggle('open');}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function openModal(html){document.getElementById('modal-box').innerHTML=html;document.getElementById('overlay').classList.add('open');}
+function openActionPanel(html){const p=document.getElementById('action-panel');p.innerHTML=html;p.classList.add('open');}
+function closeActionPanel(){const p=document.getElementById('action-panel');p.classList.remove('open');p.innerHTML='';}
+function setMsg(t){const el=document.getElementById('msg-bar');if(el)el.textContent=t;}
+function returnToTables(){if(window.fbReturnToTables)window.fbReturnToTables();}
+function humanBidOrder(a){if(window._hBO)window._hBO(a);}
+function humanBidPass1(){if(window._hBP1)window._hBP1();}
+function humanBidPass2(){if(window._hBP2)window._hBP2();}
+function humanNameSuit(s){if(window._hNS)window._hNS(s);}
+function humanNameSuitAlone(s){if(window._hNSA)window._hNSA(s);}
+function humanDiscard(i){if(window._hD)window._hD(i);}
+function humanStuckName(s){if(window._hSN)window._hSN(s);}
+function humanTradeKittyAction(){if(window._hTK)window._hTK();}
 function scaleGame(){
-  const sc=document.getElementById('game-scaler'); if(!sc) return;
+  const sc=document.getElementById('game-scaler');if(!sc)return;
   const gw=980,vw=window.innerWidth;
   if(vw<gw){const s=vw/gw;sc.style.transform='scale('+s+')';sc.style.width=gw+'px';sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';}
   else{sc.style.transform=sc.style.width=sc.style.marginBottom='';}
 }
-window.addEventListener('resize',scaleGame); setTimeout(scaleGame,50);
+window.addEventListener('resize',scaleGame);setTimeout(scaleGame,50);
 </script>
 
 <script type="module">
@@ -623,29 +591,15 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase
 import {getDatabase,ref,set,get,update,onValue,off,remove,serverTimestamp}
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// dbg available inside module too
-function dbg(msg) {
-  const el = document.getElementById('debug');
-  if (el) { el.style.display='block'; el.textContent=msg; }
-  console.log('[TGIS]', msg);
-}
-
-// Show any error visibly
-window.onerror = function(msg, src, line) {
-  document.getElementById('debug').style.display = 'block';
-  document.getElementById('debug').style.background = 'red';
-  document.getElementById('debug').style.color = 'white';
-  document.getElementById('debug').textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+const dbg = msg => {
+  const el=document.getElementById('debug');
+  if(el){el.style.display='block';el.textContent=msg;}
+  console.log('[TGIS]',msg);
 };
 
+let app, db;
 try {
-  document.getElementById('debug').style.display = 'block';
-  document.getElementById('debug').textContent = 'Loading Firebase...';
-  
-  // Local dbg for module scope
-  const dbg = msg => { const el=document.getElementById('debug'); if(el){el.style.display='block';el.textContent=msg;} console.log('[TGIS]',msg); };
-  
-  const app = initializeApp({
+  app = initializeApp({
     apiKey:"AIzaSyDDGy2IbSpHBsOFV7seHCw1d2oChHJaxQo",
     authDomain:"thisgameisstupid-9d565.firebaseapp.com",
     databaseURL:"https://thisgameisstupid-9d565-default-rtdb.firebaseio.com",
@@ -654,28 +608,31 @@ try {
     messagingSenderId:"730988825325",
     appId:"1:730988825325:web:1cf3aa213b7ea61493dae4"
   });
-  const db = getDatabase(app);
+  db = getDatabase(app);
   dbg('Firebase connected ✓');
+} catch(e) {
+  dbg('Firebase init error: '+e.message);
+}
 
-  const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
-  const SYM={S:'♠',H:'♥',D:'♦',C:'♣'},CLR={S:'black-card',H:'red-card',D:'red-card',C:'black-card'};
-  const SAME_C={S:'C',C:'S',H:'D',D:'H'};
-  const ALL_P=['south','west','north','east'],TEAM={south:0,north:0,west:1,east:1};
-  const PARTNER={south:'north',north:'south',west:'east',east:'west'};
-  const AI_NAMES=['Greg','Tommy','Milan','Fat Kid','Dave'];
-  const DEALER_POS={
-    south:{bottom:'340px',left:'calc(50% + 90px)',top:'auto',right:'auto'},
-    north:{top:'340px',left:'calc(50% + 90px)',bottom:'auto',right:'auto'},
-    west:{left:'112px',top:'calc(50% + 60px)',bottom:'auto',right:'auto'},
-    east:{right:'175px',top:'calc(50% + 120px)',bottom:'auto',left:'auto'}
-  };
+const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
+const SYM={S:'♠',H:'♥',D:'♦',C:'♣'},CLR={S:'black-card',H:'red-card',D:'red-card',C:'black-card'};
+const SAME_C={S:'C',C:'S',H:'D',D:'H'};
+const ALL_P=['south','west','north','east'],TEAM={south:0,north:0,west:1,east:1};
+const PARTNER={south:'north',north:'south',west:'east',east:'west'};
+const AI_NAMES=['Greg','Tommy','Milan','Fat Kid','Dave'];
+const DEALER_POS={
+  south:{bottom:'340px',left:'calc(50% + 90px)',top:'auto',right:'auto'},
+  north:{top:'340px',left:'calc(50% + 90px)',bottom:'auto',right:'auto'},
+  west:{left:'112px',top:'calc(50% + 60px)',bottom:'auto',right:'auto'},
+  east:{right:'175px',top:'calc(50% + 120px)',bottom:'auto',left:'auto'}
+};
 
-  const playerId = 'p_' + Math.random().toString(36).slice(2,10);
-  window._playerId = playerId;
+const playerId='p_'+Math.random().toString(36).slice(2,10);
+window._playerId=playerId;
 
-  let mySeat=null,myTable=null,roomRef=null,isHost=false;
-  let roomSeats={},G={},NAME={};
-  let roomListener=null,gameListener=null,tablesListener=null;
+let mySeat=null,myTable=null,roomRef=null,isHost=false;
+let roomSeats={},G={},NAME={};
+let roomListener=null,tablesListener=null;
 
 function shuffle(arr) {
   for (let i=arr.length-1;i>0;i--){const j=0|Math.random()*(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
@@ -1621,76 +1578,242 @@ function showMyBidUI() {
 
   async function act(ng){await pushG(ng);if(isHost)processAI(JSON.parse(JSON.stringify(ng)));}
 
-  // ── RENDER EXTENSION ──
-  let lastSeq=-1;
-  function renderAll_ext(){
-    if(!G||!G.hands)return;
-    renderAll();
-    if(G.seq===lastSeq)return;
-    lastSeq=G.seq;
-    if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
-    if(G.phase==='bid'&&G.bidRound===2){
-      const b=G.bidOrder?.[G.bidIdx];
-      if(b===mySeat&&b===G.dealer)showStuckUI();
-    }
-    if(G.lastTrickWinner&&G.phase==='play'){
-      const fl=document.getElementById('winner-flash');
-      if(fl){fl.textContent=NAME[G.lastTrickWinner]+' wins the trick!';fl.style.display='block';setTimeout(()=>fl.style.display='none',1600);}
-    }
-    if(G.phase==='gameover')showGameOver(G);
-    if(G.phase==='bid'){
-      const b=G.bidOrder?.[G.bidIdx];
-      if(b!==mySeat)setMsg((b?NAME[b]:'?')+' is deciding…');
-    } else if(G.phase==='play'){
-      if(G.current===mySeat)setMsg(makePlayMsg());
-      else if(G.current){setMsg(NAME[G.current]+' is thinking…');closeActionPanel();}
-    } else if(G.phase==='discard'&&G.dealer!==mySeat){
-      setMsg(NAME[G.dealer]+' is discarding…');
-    }
-  }
-
-  function showStuckUI(){
-    const btns=SUITS.map(s=>`<button class="mbtn ${s==='H'||s==='D'?'mbtn-suit-r':'mbtn-suit-b'}" onclick="window.humanStuckName('${s}')">${SYM[s]} ${s}</button>`).join('');
-    openActionPanel(`<h2>You're Stuck!</h2><p>Everyone passed. Name any trump.</p><div class="btn-row">${btns}</div><div class="btn-row" style="margin-top:8px"><button class="mbtn mbtn-alone" onclick="window.humanTradeKittyAction()">🔄 Trade Hand for Kitty</button></div>`);
-  }
-
-  function showDiscardUI(){
-    const hand=G.hands[mySeat];
-    const btns=hand.map((c,i)=>{const t=effSuit(c,G.trump)===G.trump,r=c.s==='H'||c.s==='D';return`<button class="mbtn mbtn-discard ${r?'is-red':''} ${t?'is-trump':''}" onclick="window.humanDiscard(${i})">${c.r}${SYM[c.s]}${t?' ★':''}</button>`;}).join('');
-    const pu=hand[hand.length-1];
-    openActionPanel(`<h2>Discard a Card</h2><p>Picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p><p style="font-size:0.82rem;color:var(--gold)">✦ mystery can't be discarded. Trump ★</p><div class="btn-row">${btns}</div>`);
-  }
-
-  function showGameOver(ng){
-    const hr=ng.lastHandResult,mt=hr?hr.mt:0;
-    let result='',emoji='🎉';
-    if(hr){if(hr.tricks>=3){if(hr.pts[mt]===6){result=NAME[hr.loner]+' went ALONE! 6 pts!';emoji='🌟';}else if(hr.tricks===5)result=(mt===0?NAME.south+'&'+NAME.north:NAME.west+'&'+NAME.east)+' swept!';else result='Makers got '+hr.tricks+' tricks.';}else{result='EUCHRED!';emoji='😬';}}
-    const ws=ng.scores[0]>=10?`${NAME.south} &amp; ${NAME.north} WIN! 🏆`:`${NAME.west} &amp; ${NAME.east} win.`;
-    openModal(`<h2>Game Over ${emoji}</h2><p>${result}</p><p style="margin:10px 0;font-size:1.1rem">Final: <b>${ng.scores[0]}</b> — <b>${ng.scores[1]}</b></p><p style="color:var(--gold-bright);font-size:1.1rem;font-family:'Playfair Display',serif">${ws}</p><div class="btn-row"><button class="mbtn mbtn-newgame" onclick="window.closeModal();window.returnToTables()">Back to Tables</button></div>`);
-  }
-
-  // human action handlers
-  window._hBO  = a=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));if(a)setGoingAloneState(ng,mySeat);applyOrderUp(ng,mySeat);act(ng);};
-  window._hBP1 = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
-  window._hNS  = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
-  window._hNSA = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));setGoingAloneState(ng,mySeat);applyNameTrump(ng,mySeat,s);act(ng);};
-  window._hBP2 = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
-  window._hD   = i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.hands[mySeat].splice(i,1);applyStartPlay(ng);act(ng);};
-  window._hSN  = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
-  window._hTK  = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
-  window.humanPlayCard    = i=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);};
-  window.humanPlayMystery = ()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
-
-  document.getElementById('debug').textContent = 'Module ready ✓';
-
-  // auto-load tables if already on that screen
-  if(document.getElementById('scr-tables').classList.contains('active')){
-    window.if(window.fbLoadTables) window.fbLoadTables();
-  }
-
-} catch(e) {
-  dbg('FIREBASE ERROR: '+e.message);
+function buildNameMap(seats){
+  const used=ALL_P.map(s=>seats[s]?.name).filter(Boolean);
+  const avail=AI_NAMES.filter(n=>!used.includes(n));
+  ALL_P.forEach((s,i)=>{NAME[s]=seats[s]?seats[s].name:(avail[i%avail.length]||'AI');});
 }
+
+function buildInitialGameState(){
+  const deck=makeDeck(),dealer='south',di=0;
+  const hands={},myst={};
+  for(let i=0;i<4;i++){const p=ALL_P[(di+1+i)%4];hands[p]=deck.slice(i*5,i*5+4);myst[p]=deck[i*5+4];}
+  const kitty=deck.slice(20);
+  return{trump:null,maker:null,makerTeam:null,hands,myst,
+    mystUsed:{south:false,west:false,north:false,east:false},
+    mystBrokeTrump:{south:false,west:false,north:false,east:false},
+    trick:{south:null,west:null,north:null,east:null},
+    trickWins:[0,0],trickCount:0,ledSuit:null,leader:null,current:null,
+    phase:'bid',upcard:kitty[0],kitty,bidRound:1,bidIdx:0,
+    bidOrder:[ALL_P[1],ALL_P[2],ALL_P[3],ALL_P[0]],
+    goingAlone:false,loner:null,sittingOut:null,tradeFlipped:null,
+    scores:[0,0],dealer,seq:0};
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function pushG(ng){ng.seq=(ng.seq||0)+1;await set(ref(db,'rooms/'+myTable+'/gameState'),ng);}
+
+// ── LOBBY ──
+window.fbLoadTables=function(){
+  if(!db){dbg('DB not ready');return;}
+  if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+  dbg('Listening to tables…');
+  tablesListener=onValue(ref(db,'rooms'),snap=>{
+    const all=snap.val()||{};
+    dbg('Tables snapshot received');
+    ['founders','open','lordsarcade'].forEach(id=>updateTableUI(id,all[id]||null));
+  },err=>dbg('DB error: '+err.message));
+};
+
+window.stopTableListener=function(){
+  if(tablesListener&&db){off(ref(db,'rooms'));tablesListener=null;}
+};
+
+window.fbClearTable=async function(tableId){
+  if(!db)return;
+  try{await remove(ref(db,'rooms/'+tableId));dbg('Cleared '+tableId);}
+  catch(e){dbg('Clear error: '+e.message);}
+};
+
+window.fbClaimSeat=async function(tableId,seat,name){
+  if(!db){dbg('DB not ready');return;}
+  mySeat=seat;myTable=tableId;roomRef=ref(db,'rooms/'+tableId);
+  if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+  dbg('Claiming '+seat+' at '+tableId+'…');
+  try{
+    const snap=await get(roomRef);
+    if(!snap.exists()){
+      isHost=true;
+      const seats={};seats[seat]={id:playerId,name,human:true};
+      await set(roomRef,{seats,phase:'lobby',host:playerId});
+    }else{
+      const d=snap.val();
+      if(d.phase!=='lobby'){dbg('In progress!');window.fbLoadTables();return;}
+      if(d.seats?.[seat]&&d.seats[seat].id!==playerId){dbg('Seat taken!');window.fbLoadTables();return;}
+      for(const s of ALL_P){
+        if(d.seats?.[s]?.id===playerId&&s!==seat)
+          await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);
+      }
+      isHost=!d.host||d.host===playerId;
+      await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:playerId,name,human:true});
+      if(!d.host)await update(roomRef,{host:playerId});
+    }
+    dbg('Seat claimed! Loading room…');
+    const snap2=await get(roomRef);
+    roomSeats=snap2.val()?.seats||{};
+    showSeatedView(myTable,mySeat,snap2.val()||{});
+    subscribeRoom();
+  }catch(e){dbg('Claim error: '+e.message);}
+};
+
+window.fbLeaveSeat=async function(){
+  if(!db)return;
+  if(roomRef&&mySeat){
+    try{
+      await set(ref(db,'rooms/'+myTable+'/seats/'+mySeat),null);
+      const s2=await get(roomRef);
+      if(s2.exists()&&!ALL_P.some(s=>s2.val().seats?.[s]))await remove(roomRef);
+    }catch(e){}
+    if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
+  }
+  mySeat=null;myTable=null;isHost=false;roomRef=null;
+  showScr('tables');
+  window.fbLoadTables();
+};
+
+window.fbStartGame=async function(){
+  if(!db||!roomRef)return;
+  const snap=await get(roomRef);
+  if(!snap.exists())return;
+  roomSeats=snap.val().seats||{};
+  buildNameMap(roomSeats);
+  const gs=buildInitialGameState();
+  await update(roomRef,{phase:'playing',gameState:gs});
+  dbg('Game started!');
+};
+
+window.fbReturnToTables=async function(){
+  if(roomRef){try{await update(roomRef,{phase:'lobby',gameState:null});}catch(e){}}
+  if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
+  mySeat=null;myTable=null;isHost=false;roomRef=null;
+  showLobby();showScr('tables');
+  renderTablesSkeleton();
+  window.fbLoadTables();
+};
+
+function subscribeRoom(){
+  if(roomListener)off(ref(db,'rooms/'+myTable));
+  roomListener=onValue(ref(db,'rooms/'+myTable),snap=>{
+    if(!snap.exists()){window.fbLeaveSeat();return;}
+    const d=snap.val();
+    if(d.seats)roomSeats=d.seats;
+    updateSeatedList(d);
+    if(d.phase==='playing'&&d.gameState){
+      hideLobby();
+      buildNameMap(roomSeats);
+      G=d.gameState;
+      renderAll_ext();
+      off(ref(db,'rooms/'+myTable));roomListener=null;
+      startGameListener();
+    }
+  });
+}
+
+async function startGameListener(){
+  const seatsSnap=await get(ref(db,'rooms/'+myTable+'/seats'));
+  if(seatsSnap.exists()){roomSeats=seatsSnap.val();buildNameMap(roomSeats);}
+  dbg('Game started. isHost='+isHost+' seats='+JSON.stringify(Object.keys(roomSeats)));
+  onValue(ref(db,'rooms/'+myTable+'/gameState'),snap=>{
+    if(!snap.exists())return;
+    const prev=G.seq;
+    G=snap.val();
+    renderAll_ext();
+    if(isHost&&G.seq!==prev)processAI(JSON.parse(JSON.stringify(G)));
+  });
+  onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
+    if(snap.exists()){roomSeats=snap.val();buildNameMap(roomSeats);}
+  });
+}
+
+async function processAI(ng){
+  if(!isHost)return;
+  if(ng.phase==='resolving'){
+    await sleep(1400);applyResolveTrick(ng);
+    if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
+    await pushG(ng);processAI(ng);return;
+  }
+  if(ng.phase==='bid'){
+    const b=ng.bidOrder?.[ng.bidIdx];
+    if(b&&!roomSeats[b]?.human){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+  }
+  if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]?.human){
+    await sleep(800);doAIPlayOnState(ng,ng.current);await pushG(ng);processAI(ng);return;
+  }
+  if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
+}
+
+async function act(ng){await pushG(ng);if(isHost)processAI(JSON.parse(JSON.stringify(ng)));}
+
+let lastSeq=-1;
+function renderAll_ext(){
+  if(!G||!G.hands)return;
+  renderAll();
+  if(G.seq===lastSeq)return;
+  lastSeq=G.seq;
+  if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
+  if(G.phase==='bid'&&G.bidRound===2){
+    const b=G.bidOrder?.[G.bidIdx];
+    if(b===mySeat&&b===G.dealer)showStuckUI();
+  }
+  if(G.lastTrickWinner&&G.phase==='play'){
+    const fl=document.getElementById('winner-flash');
+    if(fl){fl.textContent=NAME[G.lastTrickWinner]+' wins the trick!';fl.style.display='block';setTimeout(()=>fl.style.display='none',1600);}
+  }
+  if(G.phase==='gameover')showGameOver(G);
+  if(G.phase==='bid'){
+    const b=G.bidOrder?.[G.bidIdx];
+    if(b!==mySeat)setMsg((NAME[b]||'?')+' is deciding…');
+  }else if(G.phase==='play'){
+    if(G.current===mySeat)setMsg(makePlayMsg());
+    else if(G.current){setMsg(NAME[G.current]+' is thinking…');closeActionPanel();}
+  }else if(G.phase==='discard'&&G.dealer!==mySeat){
+    setMsg(NAME[G.dealer]+' is discarding…');
+  }
+}
+
+function showStuckUI(){
+  const btns=SUITS.map(s=>`<button class="mbtn ${s==='H'||s==='D'?'mbtn-suit-r':'mbtn-suit-b'}" onclick="window.humanStuckName('${s}')">${SYM[s]} ${s}</button>`).join('');
+  openActionPanel(`<h2>You're Stuck!</h2><p>Everyone passed. Name any trump.</p><div class="btn-row">${btns}</div><div class="btn-row" style="margin-top:8px"><button class="mbtn mbtn-alone" onclick="window.humanTradeKittyAction()">🔄 Trade Hand for Kitty</button></div>`);
+}
+
+function showDiscardUI(){
+  const hand=G.hands[mySeat];
+  const btns=hand.map((c,i)=>{const t=effSuit(c,G.trump)===G.trump,r=c.s==='H'||c.s==='D';return`<button class="mbtn mbtn-discard ${r?'is-red':''} ${t?'is-trump':''}" onclick="window.humanDiscard(${i})">${c.r}${SYM[c.s]}${t?' ★':''}</button>`;}).join('');
+  const pu=hand[hand.length-1];
+  openActionPanel(`<h2>Discard a Card</h2><p>Picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p><p style="font-size:0.82rem;color:var(--gold)">✦ mystery can't be discarded. Trump ★</p><div class="btn-row">${btns}</div>`);
+}
+
+function showGameOver(ng){
+  const hr=ng.lastHandResult,mt=hr?hr.mt:0;
+  let result='',emoji='🎉';
+  if(hr){if(hr.tricks>=3){if(hr.pts[mt]===6){result=NAME[hr.loner]+' went ALONE! 6 pts!';emoji='🌟';}else if(hr.tricks===5)result=(mt===0?NAME.south+'&'+NAME.north:NAME.west+'&'+NAME.east)+' swept!';else result='Makers got '+hr.tricks+' tricks.';}else{result='EUCHRED!';emoji='😬';}}
+  const ws=ng.scores[0]>=10?`${NAME.south} &amp; ${NAME.north} WIN! 🏆`:`${NAME.west} &amp; ${NAME.east} win.`;
+  openModal(`<h2>Game Over ${emoji}</h2><p>${result}</p><p style="margin:10px 0;font-size:1.1rem">Final: <b>${ng.scores[0]}</b> — <b>${ng.scores[1]}</b></p><p style="color:var(--gold-bright);font-size:1.1rem;font-family:'Playfair Display',serif">${ws}</p><div class="btn-row"><button class="mbtn mbtn-newgame" onclick="window.closeModal();window.returnToTables()">Back to Tables</button></div>`);
+}
+
+// Human actions
+window._hBO =a=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));if(a)setGoingAloneState(ng,mySeat);applyOrderUp(ng,mySeat);act(ng);};
+window._hBP1=()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
+window._hNS =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
+window._hNSA=s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));setGoingAloneState(ng,mySeat);applyNameTrump(ng,mySeat,s);act(ng);};
+window._hBP2=()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
+window._hD  =i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.hands[mySeat].splice(i,1);applyStartPlay(ng);act(ng);};
+window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
+window._hTK =()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
+window.humanPlayCard   =i=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);};
+window.humanPlayMystery=()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
+window.closeModal=closeModal;
+window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();};
+window.humanStuckName=s=>window._hSN&&window._hSN(s);
+window.humanTradeKittyAction=()=>window._hTK&&window._hTK();
+window.humanDiscard=i=>window._hD&&window._hD(i);
+window.humanBidOrder=a=>window._hBO&&window._hBO(a);
+window.humanBidPass1=()=>window._hBP1&&window._hBP1();
+window.humanBidPass2=()=>window._hBP2&&window._hBP2();
+window.humanNameSuit=s=>window._hNS&&window._hNS(s);
+window.humanNameSuitAlone=s=>window._hNSA&&window._hNSA(s);
+
+dbg('Module ready ✓');
 </script>
 </body>
 </html>
