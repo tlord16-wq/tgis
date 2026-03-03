@@ -1544,7 +1544,14 @@ async function processAI(ng){
   }
   if(ng.phase==='bid'){
     const b=ng.bidOrder?.[ng.bidIdx];
-    if(b&&!roomSeats[b]){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+    // Safety: if bidIdx out of range, advance round
+    if(!b){
+      if(ng.bidRound===1){ng.bidRound=2;ng.bidIdx=0;}
+      else{const forced=SUITS.find(s=>s!==ng.upcard.s);applyNameTrump(ng,ng.dealer,forced);}
+      await pushG(ng);processAI(ng);return;
+    }
+    if(!roomSeats[b]){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+    return; // human's turn
   }
   if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]){
     await sleep(800);doAIPlayOnState(ng,ng.current);await pushG(ng);processAI(ng);return;
