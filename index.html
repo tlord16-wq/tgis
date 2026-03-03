@@ -492,7 +492,10 @@ function renderTablesSkeleton() {
     const card = document.createElement('div');
     card.className = 'tcard';
     card.innerHTML =
-      '<div class="tname" id="tname-'+t.id+'">'+t.label+' <span class="tbadge b-empty" id="tbadge-'+t.id+'">Connecting…</span></div>'+
+      '<div class="tname" id="tname-'+t.id+'">'+t.label+
+      ' <span class="tbadge b-empty" id="tbadge-'+t.id+'">Connecting…</span>'+
+      ' <button id="clear-'+t.id+'" onclick="clearTable(''+t.id+'')" style="display:none;margin-left:auto;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);color:#ff8080;font-size:0.65rem;padding:2px 8px;border-radius:6px;cursor:pointer;">✕ Clear</button>'+
+      '</div>'+
       '<div class="sgrid" id="sgrid-'+t.id+'">'+
         SEATS.map(s=>'<div class="stile" id="st-'+t.id+'-'+s+'" data-table="'+t.id+'" data-seat="'+s+'">'+
           '<span class="spos">'+SLBL[s]+'</span><span class="sopen">—</span></div>').join('')+
@@ -518,6 +521,11 @@ function updateTableUI(tableId, data) {
     else {txt=n+' seated';cls='b-wait';}
     badge.textContent=txt; badge.className='tbadge '+cls;
   }
+  const clearBtn = document.getElementById('clear-'+tableId);
+  if (clearBtn) clearBtn.style.display = (phase==='playing'||n>0) ? 'inline-block' : 'none';
+  // Show/hide clear button
+  const clearBtn = document.getElementById('clear-'+tableId);
+  if (clearBtn) clearBtn.style.display = (phase==='playing'||n>0) ? 'inline-block' : 'none';
 
   SEATS.forEach(s => {
     const tile = document.getElementById('st-'+tableId+'-'+s);
@@ -589,6 +597,11 @@ function humanNameSuitAlone(s){window._hNSA&&window._hNSA(s);}
 function humanDiscard(i){window._hD&&window._hD(i);}
 function humanStuckName(s){window._hSN&&window._hSN(s);}
 function humanTradeKittyAction(){window._hTK&&window._hTK();}
+
+function clearTable(tableId) {
+  if (!confirm('Clear this table and reset it to empty?')) return;
+  if (window.fbClearTable) window.fbClearTable(tableId);
+}
 
 function scaleGame(){
   const sc=document.getElementById('game-scaler'); if(!sc) return;
@@ -1499,6 +1512,13 @@ function showMyBidUI() {
     dbg('Game started!');
   };
 
+  window.fbClearTable = async function(tableId) {
+    try {
+      await remove(ref(db,'rooms/'+tableId));
+      dbg('Table cleared!');
+    } catch(e) { dbg('Clear error: '+e.message); }
+  };
+
   window.fbReturnToTables = async function(){
     if(gameListener){off(ref(db,'rooms/'+myTable+'/gameState'));gameListener=null;}
     if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
@@ -1542,14 +1562,22 @@ function showMyBidUI() {
     dbg('Subscribed to room. Waiting for snapshot…'); //dbg('Subscribed to room '+myTable);
   }
 
-  function startGameListener(){
+  async function startGameListener(){
+    // Load seats first so AI logic works immediately
+    const seatsSnap = await get(ref(db,'rooms/'+myTable+'/seats'));
+    if(seatsSnap.exists()){ roomSeats=seatsSnap.val(); buildNameMap(roomSeats); }
+    dbg('Seats loaded: '+JSON.stringify(Object.keys(roomSeats)));
+    
     const gsRef=ref(db,'rooms/'+myTable+'/gameState');
     gameListener=onValue(gsRef,snap=>{
       if(!snap.exists())return;
       const prev=G.seq;
       G=snap.val();
       renderAll_ext();
-      if(isHost&&G.seq!==prev) processAI(JSON.parse(JSON.stringify(G)));
+      if(isHost&&G.seq!==prev){
+        dbg('Host processing AI, phase='+G.phase+' seats='+JSON.stringify(roomSeats));
+        processAI(JSON.parse(JSON.stringify(G)));
+      }
     });
     onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
       if(snap.exists()){roomSeats=snap.val();buildNameMap(roomSeats);renderAll_ext();}
