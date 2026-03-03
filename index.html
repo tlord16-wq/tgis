@@ -1495,10 +1495,12 @@ function showMyBidUI() {
   function subscribeRoom(){
     if(roomListener)off(ref(db,'rooms/'+myTable));
     roomListener=onValue(ref(db,'rooms/'+myTable),snap=>{
+      dbg('Room snapshot received, exists='+snap.exists());
       if(!snap.exists()){window.fbLeaveSeat();return;}
       const d=snap.val();
       if(d.seats)roomSeats=d.seats;
       if(d.phase==='lobby'){
+        dbg('Phase lobby, showing seated view for '+myTable+'/'+mySeat);
         showSeatedView(myTable,mySeat,d);
       } else if(d.phase==='playing'&&d.gameState){
         hideLobby();
@@ -1509,7 +1511,7 @@ function showMyBidUI() {
         startGameListener();
       }
     });
-    dbg('Subscribed to room '+myTable);
+    dbg('Subscribed to room. Waiting for snapshot…'); //dbg('Subscribed to room '+myTable);
   }
 
   function startGameListener(){
