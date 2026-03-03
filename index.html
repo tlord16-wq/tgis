@@ -1681,14 +1681,7 @@ function showMyBidUI() {
   window.humanPlayCard    = i=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);};
   window.humanPlayMystery = ()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
 
-  // expose to regular script
-  window.myId   = myId;
-  window.myName = myName;
-  // sync myId/myName from outer scope
-  Object.defineProperty(window,'myId',{get:()=>myId});
-  Object.defineProperty(window,'myName',{get:()=>window._myName||myName,set:v=>{myName=v;}});
-
-  dbg('Module ready ✓');
+  document.getElementById('debug').textContent = 'Module ready ✓';
 
   // auto-load tables if already on that screen
   if(document.getElementById('scr-tables').classList.contains('active')){
