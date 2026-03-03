@@ -467,11 +467,18 @@ document.getElementById('cont-btn').onclick = function() {
   if (!n) { document.getElementById('name-err').textContent = 'Please enter your name.'; return; }
   document.getElementById('name-err').textContent = '';
   myName = n;
+  window._myName = n;
+  try { sessionStorage.setItem('tgis_name', n); } catch(e) {}
   document.getElementById('name-show').textContent = n;
   showScr('tables');
   renderTablesSkeleton();
   fbLoadTables();
 };
+// Pre-fill name from session
+try {
+  const saved = sessionStorage.getItem('tgis_name');
+  if (saved) document.getElementById('inp-name').value = saved;
+} catch(e) {}
 document.getElementById('inp-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('cont-btn').click(); });
 document.getElementById('back-btn').onclick = function() { showScr('name'); stopTableListener(); };
 document.getElementById('start-btn').onclick = function() { fbStartGame(); };
@@ -1427,11 +1434,11 @@ function showMyBidUI() {
     if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
   };
 
-  window.fbClaimSeat = async function(tableId, seat){
-    if(!window._myName){showScr('name');return;}
+  window.fbClaimSeat = async function(tableId, seat, nameArg){
+    const _name = nameArg || window._myName; const _id=window._playerId;
+    if(!_name){showScr('name');return;}
     mySeat=seat; myTable=tableId; roomRef=ref(db,'rooms/'+tableId);
-    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
-    const _name=window._myName; const _id=window._playerId;
+    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;};
     dbg('Claiming '+seat+' at '+tableId+'…');
     const snap=await get(roomRef);
     if(!snap.exists()){
