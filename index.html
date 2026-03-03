@@ -640,6 +640,9 @@ try {
     east:{right:'175px',top:'calc(50% + 120px)',bottom:'auto',left:'auto'}
   };
 
+  const playerId = 'p_' + Math.random().toString(36).slice(2,10);
+  window._playerId = playerId;
+
   let mySeat=null,myTable=null,roomRef=null,isHost=false;
   let roomSeats={},G={},NAME={};
   let roomListener=null,gameListener=null,tablesListener=null;
