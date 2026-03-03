@@ -417,6 +417,7 @@ body {
    </div>
    <div id="tables-list"></div>
    <button class="lbtn lbtn-dim" id="back-btn" style="width:auto;padding:8px 20px;display:inline-block;margin-top:10px;">← Change Name</button>
+   <button class="lbtn lbtn-dim" onclick="resetAllTables()" style="width:auto;padding:8px 20px;display:inline-block;margin-top:6px;border-color:rgba(255,80,80,0.4)!important;color:#ff8080;">✕ Reset Stuck Tables</button>
    <div id="tbl-status" class="lerr" style="color:#7a5e22;margin-top:6px;"></div>
   </div>
 
@@ -599,8 +600,13 @@ function humanStuckName(s){window._hSN&&window._hSN(s);}
 function humanTradeKittyAction(){window._hTK&&window._hTK();}
 
 function clearTable(tableId) {
-  if (!confirm('Clear this table and reset it to empty?')) return;
   if (window.fbClearTable) window.fbClearTable(tableId);
+}
+function resetAllTables() {
+  if (!confirm('Reset all stuck tables?')) return;
+  ['founders','open','lordsarcade'].forEach(id => {
+    if (window.fbClearTable) window.fbClearTable(id);
+  });
 }
 
 function scaleGame(){
