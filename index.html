@@ -1445,9 +1445,9 @@ function showMyBidUI() {
       const snap=await get(roomRef);
       if(!snap.exists()){
         isHost=true;
-        const seats={south:null,west:null,north:null,east:null};
+        const seats={};
         seats[seat]={id:_id,name:_name,human:true};
-        await set(roomRef,{seats,phase:'lobby',host:_id,created:serverTimestamp()});
+        await set(roomRef,{seats,phase:'lobby',host:_id});
       } else {
         const d=snap.val();
         if(d.phase!=='lobby'){ dbg('Game in progress!'); window.fbLoadTables(); return; }
