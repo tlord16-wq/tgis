@@ -1419,7 +1419,7 @@ function showMyBidUI() {
     if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
     tablesListener=onValue(ref(db,'rooms'),snap=>{
       const all=snap.val()||{};
-      window.TBLS.forEach(t=>updateTableUI(t.id,all[t.id]||null));
+      TBLS.forEach(t=>updateTableUI(t.id,all[t.id]||null));
     },err=>{dbg('DB read error: '+err.message);});
     dbg('Listening to tables…');
   };
@@ -1428,24 +1428,25 @@ function showMyBidUI() {
   };
 
   window.fbClaimSeat = async function(tableId, seat){
-    if(!window.myName){showScr('name');return;}
+    if(!window._myName){showScr('name');return;}
     mySeat=seat; myTable=tableId; roomRef=ref(db,'rooms/'+tableId);
     if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+    const _name=window._myName; const _id=window._playerId;
     dbg('Claiming '+seat+' at '+tableId+'…');
     const snap=await get(roomRef);
     if(!snap.exists()){
       isHost=true;
       const seats={south:null,west:null,north:null,east:null};
-      seats[seat]={id:window.myId,name:window.myName,human:true};
-      await set(roomRef,{seats,phase:'lobby',host:window.myId,created:serverTimestamp()});
+      seats[seat]={id:_id,name:_name,human:true};
+      await set(roomRef,{seats,phase:'lobby',host:_id,created:serverTimestamp()});
     } else {
       const d=snap.val();
       if(d.phase!=='lobby'){document.getElementById('tbl-status').textContent='That game is in progress.';window.fbLoadTables();return;}
-      if(d.seats?.[seat]&&d.seats[seat].id!==window.myId){document.getElementById('tbl-status').textContent='Seat just taken!';window.fbLoadTables();return;}
-      for(const s of ALL_P){if(d.seats?.[s]?.id===window.myId&&s!==seat)await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);}
-      isHost=!d.host||d.host===window.myId;
-      await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:window.myId,name:window.myName,human:true});
-      if(!d.host)await update(roomRef,{host:window.myId});
+      if(d.seats?.[seat]&&d.seats[seat].id!==_id){document.getElementById('tbl-status').textContent='Seat just taken!';window.fbLoadTables();return;}
+      for(const s of ALL_P){if(d.seats?.[s]?.id===_id&&s!==seat)await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);}
+      isHost=!d.host||d.host===_id;
+      await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:_id,name:_name,human:true});
+      if(!d.host)await update(roomRef,{host:_id});
     }
     subscribeRoom();
   };
@@ -1454,7 +1455,7 @@ function showMyBidUI() {
     if(roomRef&&mySeat){
       await set(ref(db,'rooms/'+myTable+'/seats/'+mySeat),null);
       const s2=await get(roomRef);
-      if(s2.exists()&&!ALL_P.some(s=>s2.val().seats?.[s]))await remove(roomRef);
+      if(s2.exists()&&!ALL_P.some(sx=>s2.val().seats?.[sx]))await remove(roomRef);
       if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
     }
     mySeat=null;myTable=null;isHost=false;roomRef=null;
