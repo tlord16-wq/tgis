@@ -1435,27 +1435,42 @@ function showMyBidUI() {
   };
 
   window.fbClaimSeat = async function(tableId, seat, nameArg){
-    const _name = nameArg || window._myName; const _id=window._playerId;
-    if(!_name){showScr('name');return;}
+    const _name = nameArg || window._myName;
+    const _id = window._playerId;
+    if(!_name){ showScr('name'); return; }
     mySeat=seat; myTable=tableId; roomRef=ref(db,'rooms/'+tableId);
-    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;};
-    dbg('Claiming '+seat+' at '+tableId+'…');
-    const snap=await get(roomRef);
-    if(!snap.exists()){
-      isHost=true;
-      const seats={south:null,west:null,north:null,east:null};
-      seats[seat]={id:_id,name:_name,human:true};
-      await set(roomRef,{seats,phase:'lobby',host:_id,created:serverTimestamp()});
-    } else {
-      const d=snap.val();
-      if(d.phase!=='lobby'){document.getElementById('tbl-status').textContent='That game is in progress.';window.fbLoadTables();return;}
-      if(d.seats?.[seat]&&d.seats[seat].id!==_id){document.getElementById('tbl-status').textContent='Seat just taken!';window.fbLoadTables();return;}
-      for(const s of ALL_P){if(d.seats?.[s]?.id===_id&&s!==seat)await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);}
-      isHost=!d.host||d.host===_id;
-      await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:_id,name:_name,human:true});
-      if(!d.host)await update(roomRef,{host:_id});
+    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+    dbg('Writing seat to Firebase...');
+    try {
+      const snap=await get(roomRef);
+      if(!snap.exists()){
+        isHost=true;
+        const seats={south:null,west:null,north:null,east:null};
+        seats[seat]={id:_id,name:_name,human:true};
+        await set(roomRef,{seats,phase:'lobby',host:_id,created:serverTimestamp()});
+      } else {
+        const d=snap.val();
+        if(d.phase!=='lobby'){ dbg('Game in progress!'); window.fbLoadTables(); return; }
+        if(d.seats?.[seat]&&d.seats[seat].id!==_id){ dbg('Seat taken!'); window.fbLoadTables(); return; }
+        for(const s of ALL_P){
+          if(d.seats?.[s]?.id===_id&&s!==seat)
+            await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);
+        }
+        isHost=!d.host||d.host===_id;
+        await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:_id,name:_name,human:true});
+        if(!d.host) await update(roomRef,{host:_id});
+      }
+      dbg('Seat claimed! Switching screen...');
+      // Directly switch to seated screen — don't wait for Firebase callback
+      const snap2 = await get(roomRef);
+      const data = snap2.val() || {};
+      roomSeats = data.seats || {};
+      showSeatedView(myTable, mySeat, data);
+      dbg('Seated! Now subscribing to room updates...');
+      subscribeRoom();
+    } catch(e) {
+      dbg('CLAIM ERROR: '+e.message);
     }
-    subscribeRoom();
   };
 
   window.fbLeaveSeat = async function(){
