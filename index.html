@@ -631,7 +631,8 @@ const playerId='p_'+Math.random().toString(36).slice(2,10);
 window._playerId=playerId;
 
 let mySeat=null,myTable=null,roomRef=null,isHost=false;
-let roomSeats={},G={},NAME={};
+let roomSeats={},G={};
+let NAME={south:'South',west:'West',north:'North',east:'East'};
 let roomListener=null,tablesListener=null;
 
 function shuffle(arr) {
