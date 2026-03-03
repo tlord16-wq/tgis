@@ -1,1 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>This Game Is Stupid</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --felt: #1c5c30;
+  --felt-dark: #123d1f;
+  --felt-light: #22703a;
+  --gold: #c9a84c;
+  --gold-bright: #f0cc70;
+  --gold-dim: #7a5e22;
+  --cream: #f5edd6;
+  --red-card: #c0241e;
+  --black-card: #1a1a2e;
+  --card-back-a: #8B1a1a;
+  --card-back-b: #6b1010;
+  --mystery-back-a: #1a1a8B;
+  --mystery-back-b: #10106b;
+  --shadow: rgba(0,0,0,0.7);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: #0e2718;
+  background-image: radial-gradient(ellipse at 30% 20%, #1a3d24 0%, #0a1e10 100%);
+  font-family: 'Crimson Text', Georgia, serif;
+  color: var(--cream);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 20px;
+  overflow-x: hidden;
+}
+#game-scaler { transform-origin: top center; }
+.game-header { text-align: center; margin-bottom: 8px; }
+.game-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem; font-weight: 900;
+  color: var(--gold-bright); letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(201,168,76,0.4), 2px 2px 0 rgba(0,0,0,0.8);
+}
+.game-subtitle { font-family: 'Crimson Text', serif; font-style: italic; font-size: 0.85rem; color: var(--gold-dim); letter-spacing: 2px; }
+#board {
+  position: relative; width: 900px; height: 740px;
+  background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
+  border-radius: 18px; border: 5px solid var(--gold-dim);
+  box-shadow: 0 0 0 2px #0a1e10, 0 0 0 4px var(--gold), 0 0 0 6px #0a1e10, 0 0 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.35);
+  overflow: visible; isolation: isolate;
+}
+#board::before {
+  content: ''; position: absolute; inset: 0; border-radius: 14px;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+}
+.card {
+  position: relative; width: 52px; height: 76px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.3);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 3px 4px; font-family: 'Playfair Display', serif; font-size: 0.78rem; font-weight: 700;
+  flex-shrink: 0; user-select: none; background: var(--cream);
+  box-shadow: 1px 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.8);
+  transition: transform 0.15s ease, box-shadow 0.15s ease; touch-action: manipulation;
+}
+.card.red-card { color: var(--red-card); }
+.card.black-card { color: var(--black-card); }
+.card .ct { line-height: 1.15; }
+.card .cm { text-align: center; font-size: 1.25rem; line-height: 1; }
+.card .cb { line-height: 1.15; transform: rotate(180deg); }
+.card.back {
+  background: repeating-linear-gradient(45deg, var(--card-back-a) 0px, var(--card-back-a) 5px, var(--card-back-b) 5px, var(--card-back-b) 10px);
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.6);
+}
+.card.back::after { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; }
+.card.mystery-glow { border: 2px solid var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.8), 0 0 4px rgba(201,168,76,0.4), 1px 2px 6px rgba(0,0,0,0.55); }
+.card.back.mystery-glow { background: repeating-linear-gradient(45deg, var(--mystery-back-a) 0px, var(--mystery-back-a) 5px, var(--mystery-back-b) 5px, var(--mystery-back-b) 10px); }
+.card.playable { cursor: pointer; position: relative; z-index: 15; box-shadow: 0 0 0 2px #ffe066, 0 0 16px rgba(255,224,102,0.6), 1px 2px 6px rgba(0,0,0,0.55); }
+.card.playable:hover { transform: translateY(-10px) scale(1.06); box-shadow: 0 0 0 2px #ffe066, 0 0 22px rgba(255,224,102,0.9), 2px 8px 16px rgba(0,0,0,0.6); z-index: 80; }
+.card.mystery-glow.playable { box-shadow: 0 0 0 2px #ffe066, 0 0 20px rgba(201,168,76,0.9), 0 0 30px rgba(255,224,102,0.5); }
+.pzone { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 10; }
+.pzone-row { display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: center; }
+#pzone-south { bottom: 8px; left: 50%; transform: translateX(-50%); }
+#pzone-north { top: 8px; left: 50%; transform: translateX(-50%); flex-direction: column-reverse; }
+#pzone-west { left: 8px; top: 50%; transform: translateY(-50%); flex-direction: row; gap: 0px; align-items: center; }
+#pzone-east { right: 8px; top: 50%; transform: translateY(-50%); flex-direction: row-reverse; gap: 0px; align-items: center; z-index: 5; }
+#pzone-west .pzone-row, #pzone-east .pzone-row { flex-direction: column; gap: 6px; }
+.mystery-holder { display: flex; align-items: center; justify-content: center; width: 112px; height: 80px; flex-shrink: 0; position: relative; }
+.mystery-holder > .card { position: absolute; transform: rotate(90deg); transform-origin: center center; }
+.mystery-holder > .card.playable:hover { transform: rotate(90deg) translateY(-6px) scale(1.06); }
+#pzone-west .mystery-holder, #pzone-east .mystery-holder { width: 80px; height: 112px; }
+#pzone-west .mystery-holder > .card, #pzone-east .mystery-holder > .card { transform: none; }
+#pzone-west .mystery-holder > .card.playable:hover, #pzone-east .mystery-holder > .card.playable:hover { transform: translateX(-6px) scale(1.06); }
+#trick-area { position: absolute; width: 200px; height: 200px; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+#trick-north, #trick-south, #trick-west, #trick-east { pointer-events: none; }
+#trick-north { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
+#trick-south { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+#trick-west { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+#trick-east { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+#center-deco { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; color: rgba(201,168,76,0.2); font-size: 1.6rem; pointer-events: none; z-index: 1; }
+.plabel { position: absolute; font-family: 'Crimson Text', serif; font-size: 0.68rem; font-style: italic; background: rgba(0,0,0,0.55); color: rgba(201,168,76,0.85); padding: 1px 7px; border-radius: 3px; border: 1px solid rgba(201,168,76,0.2); pointer-events: none; white-space: nowrap; letter-spacing: 0.5px; }
+#lbl-south { bottom: 340px; left: 50%; transform: translateX(-50%); }
+#lbl-north { top: 340px; left: 50%; transform: translateX(-50%); }
+#lbl-west { left: 8px; top: calc(50% - 175px); }
+#lbl-east { right: 12px; top: 50%; transform: translateY(-160px); }
+/* Human player seat highlight */
+.plabel.is-me { color: var(--gold-bright); border-color: var(--gold); background: rgba(0,0,0,0.75); font-weight: 700; }
+.mystery-label { font-family: 'Crimson Text', serif; font-size: 0.6rem; font-style: italic; color: var(--gold); text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(201,168,76,0.5); display: block; margin-top: 2px; }
+#upcard-zone { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; opacity: 0; transition: opacity 0.4s; }
+#upcard-zone.visible { opacity: 1; }
+#upcard-lbl { font-size: 0.6rem; font-style: italic; color: rgba(201,168,76,0.7); text-align: center; }
+#dealer-chip { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff8dc, var(--gold)); border: 2px solid var(--gold-dim); font-family: 'Playfair Display', serif; font-size: 0.65rem; font-weight: 700; color: #3a2200; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6); transition: all 0.4s ease; z-index: 20; }
+#winner-flash { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,30,15,0.92); color: var(--gold-bright); padding: 8px 18px; border-radius: 8px; border: 1px solid var(--gold); font-family: 'Playfair Display', serif; font-size: 0.9rem; z-index: 60; white-space: nowrap; box-shadow: 0 0 20px rgba(201,168,76,0.4); pointer-events: none; animation: flashIn 0.2s ease; }
+@keyframes flashIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+.active-indicator { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #ffe066; box-shadow: 0 0 8px #ffe066; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+#ind-south { bottom: 340px; left: calc(50% + 90px); }
+#ind-north { top: 340px; left: calc(50% + 90px); }
+#ind-west { left: 110px; top: calc(50% - 60px); }
+#ind-east { right: 175px; top: calc(50% - 175px); }
+#info-strip { width: 960px; display: flex; gap: 8px; margin-top: 7px; align-items: center; }
+.info-pill { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--gold-dim); border-radius: 6px; padding: 5px 10px; text-align: center; }
+.info-pill .pill-label { color: rgba(201,168,76,0.6); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; display: block; }
+.info-pill .pill-val { color: var(--gold-bright); font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.2rem; }
+.info-pill.score-pill { flex: 1.5; }
+.btn-new { font-family: 'Playfair Display', serif; font-size: 0.78rem; font-weight: 700; background: radial-gradient(circle at 40% 30%, #d4aa50, #8B6914); color: #1a0e00; border: 1px solid var(--gold); border-radius: 6px; padding: 6px 14px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: all 0.15s; white-space: nowrap; }
+.btn-new:hover { transform: scale(1.05); }
+.btn-help { font-family: 'Crimson Text', serif; font-size: 0.78rem; background: rgba(0,0,0,0.5); color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: all 0.15s; }
+#msg-bar { width: 960px; margin-top: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(201,168,76,0.25); border-radius: 20px; padding: 5px 18px; font-family: 'Crimson Text', serif; font-style: italic; font-size: 1.5rem; color: var(--cream); text-align: center; min-height: 30px; transition: all 0.3s; }
+#action-panel { position: relative; width: 960px; background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%); border: 2px solid var(--gold); border-radius: 14px; padding: 16px 28px; box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 20px rgba(201,168,76,0.15); z-index: 10; display: none; margin-top: 8px; }
+#action-panel.open { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
+#action-panel h2 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 1.3rem; margin-bottom: 10px; letter-spacing: 1px; }
+#action-panel p { font-family: 'Crimson Text', serif; font-size: 1.05rem; line-height: 1.5; margin-bottom: 6px; color: var(--cream); }
+#action-panel .btn-row { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.mbtn { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.82rem; padding: 9px 18px; border-radius: 7px; border: 1px solid transparent; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; min-height: 44px; touch-action: manipulation; }
+.mbtn:hover { transform: scale(1.05); }
+.mbtn-order { background: radial-gradient(circle at 40% 30%, #5a9e6a, #2a6a3a); color: #fff; border-color: #3d8a50; }
+.mbtn-pass { background: rgba(100,100,100,0.4); color: #bbb; border-color: #555; }
+.mbtn-suit-r { background: radial-gradient(circle at 40% 30%, #cc4444, #8B1a1a); color: #fff; border-color: #aa2222; }
+.mbtn-suit-b { background: radial-gradient(circle at 40% 30%, #3a3a8B, #1a1a5a); color: #fff; border-color: #2a2a6a; }
+.mbtn-discard { background: #f5edd6; color: #1a1a1a; border: 2px solid #c9a84c; font-size: 1rem; padding: 10px 14px; min-width: 64px; }
+.mbtn-discard.is-trump { border-color: #e8b800; box-shadow: 0 0 8px rgba(232,184,0,0.5); }
+.mbtn-discard.is-red { color: #c0241e; }
+.mbtn-discard:hover { background: #fff8e8; transform: scale(1.08); }
+.mbtn-newgame { background: radial-gradient(circle at 40% 30%, #d4aa50, #8B6914); color: #1a0e00; border-color: var(--gold); }
+.mbtn-alone { background: radial-gradient(circle at 40% 30%, #7a3da8, #3a1060); color: #fff; border-color: #9b59d0; box-shadow: 0 0 10px rgba(154,89,208,0.4); }
+#overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+#overlay.open { display: flex; }
+#modal-box { background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%); border: 2px solid var(--gold); border-radius: 14px; padding: 28px 32px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); }
+#modal-box h2 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 1.3rem; margin-bottom: 12px; }
+#modal-box p { font-family: 'Crimson Text', serif; font-size: 0.95rem; line-height: 1.6; margin-bottom: 8px; color: var(--cream); }
+#modal-box .btn-row { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+#help-panel { display: none; width: 960px; background: rgba(0,0,0,0.55); border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 14px 20px; margin-top: 8px; font-size: 0.83rem; line-height: 1.7; color: var(--cream); }
+#help-panel.open { display: block; }
+#help-panel h3 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 0.95rem; margin-bottom: 6px; }
+#help-panel .gold { color: var(--gold); font-weight: 600; }
+.help-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@keyframes dealIn { from { opacity: 0; transform: scale(0.6) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.card.dealing { animation: dealIn 0.3s ease forwards; }
 
+/* ─── LOBBY SCREEN ─── */
+#lobby {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+  z-index: 400; align-items: center; justify-content: center;
+}
+#lobby.open { display: flex; }
+#lobby-box {
+  background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%);
+  border: 2px solid var(--gold); border-radius: 18px;
+  padding: 32px 36px; max-width: 480px; width: 94%;
+  box-shadow: 0 0 60px rgba(0,0,0,0.95), 0 0 30px rgba(201,168,76,0.2);
+  text-align: center;
+}
+#lobby-box h2 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 1.6rem; letter-spacing: 2px; margin-bottom: 4px; }
+#lobby-box .subtitle { font-family: 'Crimson Text', serif; font-style: italic; color: var(--gold-dim); font-size: 0.9rem; margin-bottom: 24px; }
+.lobby-section { margin: 16px 0; }
+.lobby-section h3 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1rem; margin-bottom: 10px; }
+.lobby-input {
+  width: 100%; padding: 10px 14px; font-family: 'Playfair Display', serif;
+  font-size: 1rem; background: rgba(0,0,0,0.5); color: var(--cream);
+  border: 1px solid var(--gold-dim); border-radius: 8px; text-align: center;
+  letter-spacing: 2px; margin-bottom: 8px;
+}
+.lobby-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.3); }
+.lobby-btn {
+  font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1rem;
+  padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none;
+  width: 100%; margin: 6px 0; transition: all 0.15s; min-height: 48px;
+}
+.lobby-btn-primary { background: radial-gradient(circle at 40% 30%, #d4aa50, #8B6914); color: #1a0e00; }
+.lobby-btn-primary:hover { transform: scale(1.02); background: radial-gradient(circle at 40% 30%, #e8c060, #a07a20); }
+.lobby-btn-secondary { background: rgba(255,255,255,0.07); color: var(--cream); border: 1px solid var(--gold-dim) !important; }
+.lobby-btn-secondary:hover { background: rgba(255,255,255,0.12); }
+.lobby-divider { color: var(--gold-dim); font-style: italic; margin: 12px 0; font-size: 0.85rem; }
+
+/* Seat selection inside lobby */
+#seat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.seat-btn {
+  padding: 12px 8px; border-radius: 10px; border: 2px solid var(--gold-dim);
+  background: rgba(0,0,0,0.4); color: var(--cream); cursor: pointer;
+  font-family: 'Playfair Display', serif; font-size: 0.85rem; font-weight: 700;
+  transition: all 0.15s; min-height: 60px;
+}
+.seat-btn:hover:not(:disabled) { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+.seat-btn.taken { opacity: 0.4; cursor: not-allowed; }
+.seat-btn.mine { border-color: var(--gold-bright); background: rgba(201,168,76,0.2); color: var(--gold-bright); }
+.seat-name { font-size: 0.72rem; display: block; margin-top: 3px; color: var(--gold-dim); }
+.seat-name.filled { color: var(--gold); }
+
+/* Waiting room */
+#waiting-room { margin-top: 16px; }
+.player-list { list-style: none; margin: 8px 0; }
+.player-list li { padding: 6px 12px; margin: 4px 0; border-radius: 6px; background: rgba(0,0,0,0.3); font-family: 'Crimson Text', serif; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+.player-dot { width: 8px; height: 8px; border-radius: 50%; background: #5ae05a; flex-shrink: 0; }
+.ai-dot { background: rgba(201,168,76,0.5); }
+#lobby-status { font-family: 'Crimson Text', serif; font-style: italic; color: var(--gold-dim); font-size: 0.85rem; margin: 8px 0; min-height: 20px; }
+#room-code-display { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold-bright); letter-spacing: 2px; margin: 8px 0; }
+
+/* ─── TABLE CARDS ─── */
+#tables-grid { display: flex; flex-direction: column; gap: 12px; }
+.table-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--gold-dim);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.table-card:hover { border-color: var(--gold); }
+.table-card-header {
+  font-family: 'Playfair Display', serif;
+  color: var(--gold-bright);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.table-status-badge {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-style: italic;
+  font-weight: 400;
+}
+.badge-waiting { background: rgba(90,224,90,0.15); color: #5ae05a; border: 1px solid rgba(90,224,90,0.3); }
+.badge-playing { background: rgba(255,150,50,0.15); color: #ffaa55; border: 1px solid rgba(255,150,50,0.3); }
+.badge-empty { background: rgba(201,168,76,0.1); color: var(--gold-dim); border: 1px solid rgba(201,168,76,0.2); }
+.seats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.seat-tile {
+  border-radius: 8px;
+  border: 1px solid var(--gold-dim);
+  padding: 8px 10px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(0,0,0,0.3);
+  text-align: center;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.seat-tile:hover:not(.seat-taken):not(.seat-mine) {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  transform: scale(1.02);
+}
+.seat-tile.seat-taken {
+  opacity: 0.5;
+  cursor: default;
+}
+.seat-tile.seat-mine {
+  border-color: var(--gold-bright);
+  background: rgba(201,168,76,0.18);
+  cursor: default;
+}
+.seat-pos { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.seat-occupant { color: var(--cream); font-weight: 600; font-size: 0.88rem; }
+.seat-occupant.is-ai { color: var(--gold-dim); font-style: italic; }
+.seat-open { color: rgba(90,224,90,0.8); font-size: 0.82rem; }
+@media (max-width: 600px) {
+  .game-title { font-size: 1.1rem; } #info-strip { gap: 4px; } .info-pill .pill-label { font-size: 0.55rem; } .info-pill .pill-val { font-size: 0.8rem; } #msg-bar { font-size: 0.78rem; } #lobby-box { padding: 20px 16px; }
+}
+
+/* Lobby */
+#lobby{display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:400;align-items:center;justify-content:center;}
+#lbox{background:linear-gradient(160deg,#1c4a2c 0%,#0e2718 100%);border:2px solid #c9a84c;border-radius:18px;padding:28px 32px;max-width:520px;width:94%;box-shadow:0 0 60px rgba(0,0,0,0.95);text-align:center;}
+.scr{display:none;}.scr.active{display:block;}
+.ltitle{font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.6rem;letter-spacing:2px;margin-bottom:2px;}
+.lsub{font-style:italic;color:#7a5e22;font-size:0.88rem;margin-bottom:22px;}
+.linput{width:100%;padding:11px 14px;font-family:'Playfair Display',serif;font-size:1rem;background:rgba(0,0,0,0.5);color:#f5edd6;border:1px solid #7a5e22;border-radius:8px;text-align:center;margin-bottom:10px;outline:none;box-sizing:border-box;}
+.linput:focus{border-color:#c9a84c;}
+.lbtn{display:block;width:100%;padding:12px;font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;border-radius:10px;cursor:pointer;border:none;margin:5px 0;}
+.lbtn-gold{background:linear-gradient(135deg,#d4aa50,#8B6914);color:#1a0e00;}
+.lbtn-dim{background:rgba(255,255,255,0.08);color:#f5edd6;border:1px solid #7a5e22!important;}
+.lerr{color:#ff7070;font-size:0.85rem;min-height:18px;margin-top:4px;}
+.tcard{background:rgba(0,0,0,0.35);border:1px solid #7a5e22;border-radius:12px;padding:14px 16px;margin-bottom:12px;text-align:left;}
+.tname{font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.05rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.tbadge{font-family:'Crimson Text',serif;font-size:0.72rem;padding:2px 8px;border-radius:10px;font-style:italic;}
+.b-empty{background:rgba(201,168,76,0.1);color:#7a5e22;border:1px solid rgba(201,168,76,0.2);}
+.b-wait{background:rgba(90,224,90,0.12);color:#5ae05a;border:1px solid rgba(90,224,90,0.25);}
+.b-play{background:rgba(255,150,50,0.12);color:#ffaa55;border:1px solid rgba(255,150,50,0.25);}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.stile{border-radius:8px;border:1px solid #7a5e22;padding:8px 10px;cursor:pointer;transition:all 0.15s;background:rgba(0,0,0,0.3);text-align:center;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.stile:hover:not(.tk):not(.me){border-color:#c9a84c;background:rgba(201,168,76,0.1);}
+.stile.tk{opacity:0.45;cursor:default;}.stile.me{border-color:#f0cc70;background:rgba(201,168,76,0.18);cursor:default;}
+.spos{color:#c9a84c;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;font-family:'Crimson Text',serif;}
+.swho{color:#f5edd6;font-size:0.88rem;font-family:'Crimson Text',serif;font-weight:600;}
+.swho.ai{color:#7a5e22;font-style:italic;}
+.sopen{color:rgba(90,224,90,0.85);font-size:0.82rem;font-family:'Crimson Text',serif;}
+.plist{list-style:none;text-align:left;margin:10px 0;}
+.plist li{padding:5px 10px;margin:3px 0;border-radius:6px;background:rgba(0,0,0,0.3);font-family:'Crimson Text',serif;font-size:0.95rem;display:flex;align-items:center;gap:8px;}
+.pdot{width:8px;height:8px;border-radius:50%;background:#5ae05a;flex-shrink:0;}
+.pdot.ai{background:rgba(201,168,76,0.4);}
+#debug{position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:#5ae05a;font-size:0.7rem;padding:6px 10px;border-radius:6px;max-width:300px;word-break:break-all;z-index:999;}
+</style>
+</head>
+<body>
+<div id="game-scaler">
+<div class="game-header">
+  <div class="game-title">THIS GAME IS STUPID</div>
+  <div class="game-subtitle">Modified Euchre · Mystery Card Edition · Multiplayer</div>
+</div>
+<div id="board">
+  <div id="pzone-south" class="pzone"></div>
+  <div id="pzone-north" class="pzone"></div>
+  <div id="pzone-west"  class="pzone"></div>
+  <div id="pzone-east"  class="pzone"></div>
+  <div id="trick-area">
+    <div id="trick-north"></div>
+    <div id="trick-south"></div>
+    <div id="trick-west"></div>
+    <div id="trick-east"></div>
+  </div>
+  <div id="center-deco">♠</div>
+  <div class="plabel" id="lbl-south">SOUTH</div>
+  <div class="plabel" id="lbl-north">NORTH</div>
+  <div class="plabel" id="lbl-west">WEST</div>
+  <div class="plabel" id="lbl-east">EAST</div>
+  <div id="upcard-zone">
+    <div id="upcard-lbl">Upcard</div>
+    <div id="upcard-card"></div>
+  </div>
+  <div id="dealer-chip">D</div>
+  <div class="active-indicator" id="ind-south" style="display:none"></div>
+  <div class="active-indicator" id="ind-north" style="display:none"></div>
+  <div class="active-indicator" id="ind-west"  style="display:none"></div>
+  <div class="active-indicator" id="ind-east"  style="display:none"></div>
+  <div id="winner-flash">—</div>
+</div>
+<div id="action-panel"></div>
+<div id="info-strip">
+  <div class="info-pill score-pill">
+    <span class="pill-label" id="score-us-label">Score · South & North</span>
+    <span class="pill-val" id="score-us">0</span>
+    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
+  </div>
+  <div class="info-pill score-pill">
+    <span class="pill-label" id="score-them-label">Score · West & East</span>
+    <span class="pill-val" id="score-them">0</span>
+    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
+  </div>
+  <div class="info-pill"><span class="pill-label">Trump</span><span class="pill-val" id="trump-disp">—</span></div>
+  <div class="info-pill"><span class="pill-label">Made by</span><span class="pill-val" id="maker-disp">—</span></div>
+  <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="tricks-disp">—</span></div>
+  <button class="btn-new" onclick="window.showLobby()">New Game</button>
+  <button class="btn-help" onclick="window.toggleHelp()">Rules?</button>
+</div>
+<div id="msg-bar">Loading…</div>
+<div id="help-panel">
+  <div class="help-cols">
+    <div>
+      <h3>🃏 The Mystery Card</h3>
+      Each player gets 1 mystery card (blue, sideways). At any time, instead of following suit, play your mystery card. It plays as its actual rank &amp; suit.
+      <br><br>Once used, normal euchre rules apply for the rest of the hand.
+    </div>
+    <div>
+      <h3>♠ Standard Euchre Rules</h3>
+      <b>Trump:</b> Right bower (J of trump) &gt; Left bower (J of same color) &gt; A &gt; K &gt; Q &gt; 10 &gt; 9<br><br>
+      <b>Scoring:</b> Makers need 3+ tricks for 1 pt, sweep 5 = 2 pts. Euchred = opponents get 2 pts.<br><br>
+      <b>Stuck:</b> Dealer must name trump in round 2.
+    </div>
+  </div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(201,168,76,0.2);font-size:0.78rem;color:rgba(201,168,76,0.6);text-align:center;font-style:italic;">
+    🃏 This Game Is Stupid was invented by <span class="gold">Greg, Tommy, Milan, Fat Kid &amp; Dave</span>.
+  </div>
+</div>
+</div><!-- game-scaler -->
+
+<div id="lobby">
+ <div id="lbox">
+  <div class="ltitle">THIS GAME IS STUPID</div>
+  <div class="lsub">Modified Euchre · Mystery Card Edition</div>
+
+  <div id="scr-name" class="scr active">
+   <div style="font-family:'Playfair Display',serif;color:#c9a84c;margin-bottom:8px;">Enter Your Name</div>
+   <input id="inp-name" class="linput" placeholder="Your name" maxlength="12">
+   <button class="lbtn lbtn-gold" id="cont-btn">Continue →</button>
+   <div id="name-err" class="lerr"></div>
+  </div>
+
+  <div id="scr-tables" class="scr">
+   <div style="color:#c9a84c;margin-bottom:14px;font-family:'Crimson Text',serif;font-size:0.95rem;">
+    Welcome, <strong id="name-show" style="font-family:'Playfair Display',serif;color:#f0cc70;"></strong>! Pick a seat.
+   </div>
+   <div id="tables-list"></div>
+   <button class="lbtn lbtn-dim" id="back-btn" style="width:auto;padding:8px 20px;display:inline-block;margin-top:10px;">← Change Name</button>
+   <div id="tbl-status" class="lerr" style="color:#7a5e22;margin-top:6px;"></div>
+  </div>
+
+  <div id="scr-seated" class="scr">
+   <div id="seated-tname" style="font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.3rem;letter-spacing:1px;margin-bottom:4px;"></div>
+   <div style="color:#c9a84c;font-family:'Crimson Text',serif;font-size:0.9rem;margin-bottom:12px;">
+    Seated: <strong id="seated-sname"></strong>
+   </div>
+   <ul id="seated-list" class="plist"></ul>
+   <div id="seated-status" style="font-style:italic;color:#7a5e22;font-size:0.85rem;margin:8px 0;"></div>
+   <button id="start-btn" class="lbtn lbtn-gold" style="display:none;">▶ Start Game</button>
+   <button id="leave-btn" class="lbtn lbtn-dim" style="margin-top:6px;">Leave Seat</button>
+  </div>
+ </div>
+</div>
+
+<div id="overlay"><div id="modal-box"></div></div>
+<div id="debug"></div>
+
+<script>
+// ── CONFIG ──
+const TBLS = [
+  {id:'founders',    label:'♠ Founders'},
+  {id:'open',        label:'♠ Open Table'},
+  {id:'lordsarcade', label:"♠ Lord's Arcade"},
+];
+const SEATS = ['south','west','north','east'];
+const SLBL  = {south:'South',north:'North',west:'West',east:'East'};
+
+let myId   = 'p_' + Math.random().toString(36).slice(2,10);
+let myName = '', mySeat = null, myTable = null;
+
+function dbg(msg) {
+  const el = document.getElementById('debug');
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+// ── SCREENS ──
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
+  document.getElementById('scr-'+id).classList.add('active');
+}
+
+// ── NAME SCREEN ──
+document.getElementById('cont-btn').onclick = function() {
+  const n = document.getElementById('inp-name').value.trim();
+  if (!n) { document.getElementById('name-err').textContent = 'Please enter your name.'; return; }
+  document.getElementById('name-err').textContent = '';
+  myName = n;
+  window._myName = n;
+  try { sessionStorage.setItem('tgis_name', n); } catch(e) {}
+  document.getElementById('name-show').textContent = n;
+  showScr('tables');
+  renderTablesSkeleton();
+  fbLoadTables();
+};
+// Pre-fill name from session
+try {
+  const saved = sessionStorage.getItem('tgis_name');
+  if (saved) document.getElementById('inp-name').value = saved;
+} catch(e) {}
+document.getElementById('inp-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('cont-btn').click(); });
+document.getElementById('back-btn').onclick = function() { showScr('name'); stopTableListener(); };
+document.getElementById('start-btn').onclick = function() { fbStartGame(); };
+document.getElementById('leave-btn').onclick = function() { fbLeaveSeat(); };
+
+// ── TABLE SKELETON ──
+function renderTablesSkeleton() {
+  const el = document.getElementById('tables-list');
+  el.innerHTML = '';
+  TBLS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'tcard';
+    card.innerHTML =
+      '<div class="tname" id="tname-'+t.id+'">'+t.label+' <span class="tbadge b-empty" id="tbadge-'+t.id+'">Connecting…</span></div>'+
+      '<div class="sgrid" id="sgrid-'+t.id+'">'+
+        SEATS.map(s=>'<div class="stile" id="st-'+t.id+'-'+s+'" data-table="'+t.id+'" data-seat="'+s+'">'+
+          '<span class="spos">'+SLBL[s]+'</span><span class="sopen">—</span></div>').join('')+
+      '</div>';
+    el.appendChild(card);
+    SEATS.forEach(s => {
+      document.getElementById('st-'+t.id+'-'+s).onclick = function() { fbClaimSeat(t.id, s); };
+    });
+  });
+}
+
+function updateTableUI(tableId, data) {
+  const seats = data?.seats || {};
+  const phase = data?.phase || 'lobby';
+  const n = SEATS.filter(s=>seats[s]).length;
+  const tbl = TBLS.find(t=>t.id===tableId);
+  
+  const badge = document.getElementById('tbadge-'+tableId);
+  if (badge) {
+    let txt='', cls='';
+    if (phase==='playing'){txt='In Progress';cls='b-play';}
+    else if (n===0){txt='Empty';cls='b-empty';}
+    else {txt=n+' seated';cls='b-wait';}
+    badge.textContent=txt; badge.className='tbadge '+cls;
+  }
+
+  SEATS.forEach(s => {
+    const tile = document.getElementById('st-'+tableId+'-'+s);
+    if (!tile) return;
+    const occ = seats[s];
+    const isMe = occ?.id === myId;
+    tile.className = 'stile'+(isMe?' me':occ?' tk':'');
+    if (isMe) {
+      tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho">You ✓</span>';
+      tile.onclick = null;
+    } else if (occ) {
+      tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho">'+occ.name+'</span>';
+      tile.onclick = null;
+    } else if (phase==='playing') {
+      tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="swho ai">AI</span>';
+      tile.onclick = null;
+    } else {
+      tile.innerHTML='<span class="spos">'+SLBL[s]+'</span><span class="sopen">Sit here</span>';
+      tile.onclick = function() { fbClaimSeat(tableId, s); };
+    }
+  });
+}
+
+// ── SEATED VIEW ──
+function showSeatedView(tableId, seat, data) {
+  showScr('seated');
+  const tbl = TBLS.find(t=>t.id===tableId);
+  document.getElementById('seated-tname').textContent = tbl ? tbl.label : tableId;
+  document.getElementById('seated-sname').textContent = SLBL[seat] || seat;
+  updateSeatedList(data);
+}
+
+function updateSeatedList(data) {
+  const seats = data?.seats || {};
+  const list = document.getElementById('seated-list');
+  list.innerHTML = '';
+  SEATS.forEach(s => {
+    const li = document.createElement('li');
+    const occ = seats[s];
+    if (occ) {
+      li.innerHTML='<span class="pdot"></span>'+occ.name+(occ.id===myId?' <b>(You)</b>':'')+' — '+SLBL[s];
+    } else {
+      li.innerHTML='<span class="pdot ai"></span>AI — '+SLBL[s];
+      li.style.opacity='0.5';
+    }
+    list.appendChild(li);
+  });
+  const n = SEATS.filter(s=>seats[s]).length;
+  document.getElementById('seated-status').textContent = n+'/4 humans — empty seats will be AI.';
+  document.getElementById('start-btn').style.display = 'block';
+}
+
+// ── GAME SCREEN HELPERS ──
+function hideLobby(){ document.getElementById('lobby').style.display='none'; }
+function showLobby(){ document.getElementById('lobby').style.display='flex'; showScr('name'); }
+function toggleHelp(){ document.getElementById('help-panel').classList.toggle('open'); }
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+function openModal(html){ document.getElementById('modal-box').innerHTML=html; document.getElementById('overlay').classList.add('open'); }
+function openActionPanel(html){ const p=document.getElementById('action-panel'); p.innerHTML=html; p.classList.add('open'); }
+function closeActionPanel(){ const p=document.getElementById('action-panel'); p.classList.remove('open'); p.innerHTML=''; }
+function setMsg(t){ const el=document.getElementById('msg-bar'); if(el) el.textContent=t; }
+function returnToTables(){ fbReturnToTables(); }
+
+function humanBidOrder(a){window._hBO&&window._hBO(a);}
+function humanBidPass1(){window._hBP1&&window._hBP1();}
+function humanBidPass2(){window._hBP2&&window._hBP2();}
+function humanNameSuit(s){window._hNS&&window._hNS(s);}
+function humanNameSuitAlone(s){window._hNSA&&window._hNSA(s);}
+function humanDiscard(i){window._hD&&window._hD(i);}
+function humanStuckName(s){window._hSN&&window._hSN(s);}
+function humanTradeKittyAction(){window._hTK&&window._hTK();}
+
+function scaleGame(){
+  const sc=document.getElementById('game-scaler'); if(!sc) return;
+  const gw=980,vw=window.innerWidth;
+  if(vw<gw){const s=vw/gw;sc.style.transform='scale('+s+')';sc.style.width=gw+'px';sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';}
+  else{sc.style.transform=sc.style.width=sc.style.marginBottom='';}
+}
+window.addEventListener('resize',scaleGame); setTimeout(scaleGame,50);
+</script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {getDatabase,ref,set,get,update,onValue,off,remove,serverTimestamp}
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// Show any error visibly
+window.onerror = function(msg, src, line) {
+  document.getElementById('debug').style.display = 'block';
+  document.getElementById('debug').style.background = 'red';
+  document.getElementById('debug').style.color = 'white';
+  document.getElementById('debug').textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+};
+
+try {
+  document.getElementById('debug').style.display = 'block';
+  document.getElementById('debug').textContent = 'Loading Firebase...';
+  const app = initializeApp({
+    apiKey:"AIzaSyDDGy2IbSpHBsOFV7seHCw1d2oChHJaxQo",
+    authDomain:"thisgameisstupid-9d565.firebaseapp.com",
+    databaseURL:"https://thisgameisstupid-9d565-default-rtdb.firebaseio.com",
+    projectId:"thisgameisstupid-9d565",
+    storageBucket:"thisgameisstupid-9d565.firebasestorage.app",
+    messagingSenderId:"730988825325",
+    appId:"1:730988825325:web:1cf3aa213b7ea61493dae4"
+  });
+  const db = getDatabase(app);
+  dbg('Firebase connected ✓');
+
+  const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
+  const SYM={S:'♠',H:'♥',D:'♦',C:'♣'},CLR={S:'black-card',H:'red-card',D:'red-card',C:'black-card'};
+  const SAME_C={S:'C',C:'S',H:'D',D:'H'};
+  const ALL_P=['south','west','north','east'],TEAM={south:0,north:0,west:1,east:1};
+  const PARTNER={south:'north',north:'south',west:'east',east:'west'};
+  const AI_NAMES=['Greg','Tommy','Milan','Fat Kid','Dave'];
+  const DEALER_POS={
+    south:{bottom:'340px',left:'calc(50% + 90px)',top:'auto',right:'auto'},
+    north:{top:'340px',left:'calc(50% + 90px)',bottom:'auto',right:'auto'},
+    west:{left:'112px',top:'calc(50% + 60px)',bottom:'auto',right:'auto'},
+    east:{right:'175px',top:'calc(50% + 120px)',bottom:'auto',left:'auto'}
+  };
+
+  let mySeat=null,myTable=null,roomRef=null,isHost=false;
+  let roomSeats={},G={},NAME={};
+  let roomListener=null,gameListener=null,tablesListener=null;
+
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--){const j=0|Math.random()*(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+function makeDeck() { return shuffle(SUITS.flatMap(s=>RANKS.map(r=>({r,s})))); }
+function effSuit(card, trump) {
+  if (!trump) return card.s;
+  if (card.r==='J' && card.s===trump) return trump;
+  if (card.r==='J' && card.s===SAME_C[trump] && card.s!==trump) return trump;
+  return card.s;
+}
+function cardVal(card, trump, led) {
+  if (card.r==='J' && card.s===trump) return 200;
+  if (card.r==='J' && card.s===SAME_C[trump] && card.s!==trump) return 199;
+  const es = effSuit(card, trump);
+  if (es===trump) return 100+RANKS.indexOf(card.r);
+  if (led && es===led) return 50+RANKS.indexOf(card.r);
+  return RANKS.indexOf(card.r);
+}
+function beats(a,b,trump,led){return cardVal(a,trump,led)>cardVal(b,trump,led);}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function makeCardEl(card, {back=false,mystery=false,playable=false,onClick=null}={}) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  if (back) {
+    div.classList.add('back');
+  } else if (card) {
+    div.classList.add(CLR[card.s]);
+    const lbl = card.r+SYM[card.s];
+    div.innerHTML = `<div class="ct">${lbl}</div><div class="cm">${SYM[card.s]}</div><div class="cb">${lbl}</div>`;
+  }
+  if (mystery) div.classList.add('mystery-glow');
+  if (playable && onClick) {
+    div.classList.add('playable');
+    div.addEventListener('click', onClick);
+  }
+  return div;
+}
+
+function makeCardWrap(card, opts, label, rotate) {
+  const el = makeCardEl(card, opts);
+  if (rotate) {
+    const rw = document.createElement('div');
+    rw.style.cssText = 'display:flex;align-items:center;justify-content:center;width:104px;height:72px;flex-shrink:0;position:relative;';
+    el.style.position = 'absolute';
+    el.style.transform = 'rotate(90deg)';
+    el.style.transformOrigin = 'center center';
+    rw.appendChild(el);
+    return rw;
+  }
+  if (!label) return el;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+  wrap.appendChild(el);
+  const lbl = document.createElement('div');
+  lbl.style.cssText = "font-size:0.52rem;font-family:'Crimson Text',serif;font-style:italic;color:"+label.color+";";
+  lbl.textContent = label.text;
+  wrap.appendChild(lbl);
+  return wrap;
+}
+
+function renderPlayerHand(seat) {
+  const zone = document.getElementById('pzone-' + seat);
+  const isMe = seat === mySeat;
+  const isWE = seat === 'west' || seat === 'east';
+  zone.innerHTML = '';
+
+  if (!G.hands || !G.hands[seat]) return;
+
+  if (G.sittingOut === seat) {
+    zone.style.opacity = '0.35'; zone.style.filter = 'grayscale(1)';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = "color:rgba(200,200,200,0.7);font-style:italic;font-size:0.72rem;text-align:center;";
+    lbl.textContent = NAME[seat] + ' (sitting out)';
+    zone.appendChild(lbl); return;
+  }
+  zone.style.opacity = ''; zone.style.filter = '';
+
+  // Mystery row
+  const mystRow = document.createElement('div');
+  mystRow.className = 'pzone-row';
+  if (!G.mystUsed[seat] && G.myst[seat]) {
+    const isMystTurn = G.phase === 'play' && G.current === seat && !G.mystUsed[seat] && G.myst[seat];
+    const canM = isMe && isMystTurn;
+    const mEl = makeCardEl(null, { back:true, mystery:true, playable:canM, onClick: canM ? ()=>humanPlayMystery() : null });
+    const holder = document.createElement('div');
+    holder.className = 'mystery-holder'; holder.appendChild(mEl);
+    const mlbl = document.createElement('div');
+    mlbl.className = 'mystery-label'; mlbl.textContent = '✦ mystery';
+    const mw = document.createElement('div');
+    mw.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
+    mw.appendChild(holder); mw.appendChild(mlbl);
+    mystRow.appendChild(mw);
+  }
+
+  // Open row (cards 0-1, face-up for all)
+  const openRow = document.createElement('div');
+  openRow.className = 'pzone-row';
+  [0,1].forEach(i => {
+    if (i >= G.hands[seat].length) return;
+    const isTurn = G.phase === 'play' && G.current === seat;
+    const p = isMe && isTurn && canPlayCard(seat, i, false);
+    openRow.appendChild(makeCardWrap(
+      G.hands[seat][i],
+      { playable: p, onClick: p ? ()=>humanPlayCard(i) : null },
+      isMe ? {text:'👁 open', color:'rgba(201,168,76,0.75)'} : null,
+      isWE
+    ));
+  });
+
+  // Secret row (cards 2-3, face-down for others)
+  const secRow = document.createElement('div');
+  secRow.className = 'pzone-row';
+  [2,3].forEach(i => {
+    if (i >= G.hands[seat].length) return;
+    const showFace = isMe;
+    const isTurn = G.phase === 'play' && G.current === seat;
+    const p = isMe && isTurn && canPlayCard(seat, i, false);
+    secRow.appendChild(makeCardWrap(
+      showFace ? G.hands[seat][i] : null,
+      { back: !showFace, playable: p, onClick: p ? ()=>humanPlayCard(i) : null },
+      isMe ? {text:'🔒 secret', color:'rgba(180,180,180,0.5)'} : null,
+      isWE
+    ));
+  });
+
+  if (isWE) {
+    zone.appendChild(secRow); zone.appendChild(openRow); zone.appendChild(mystRow);
+  } else {
+    zone.appendChild(mystRow); zone.appendChild(openRow); zone.appendChild(secRow);
+  }
+}
+
+function renderAll() {
+  if (!G || !G.hands) return;
+
+  ALL_P.forEach(s => renderPlayerHand(s));
+
+  // Trick area
+  ALL_P.forEach(s => {
+    const slot = document.getElementById('trick-' + s);
+    slot.innerHTML = '';
+    if (G.trick && G.trick[s]) {
+      slot.appendChild(makeCardEl(G.trick[s].card, {mystery: G.trick[s].isMystery}));
+    }
+  });
+
+  // Labels
+  ALL_P.forEach(s => {
+    const lbl = document.getElementById('lbl-' + s);
+    lbl.textContent = NAME[s] + (s === 'north' ? '  · Partner' : '') + (s === mySeat ? ' (You)' : '');
+    lbl.className = 'plabel' + (s === mySeat ? ' is-me' : '');
+  });
+
+  // Info
+  document.getElementById('trump-disp').textContent = G.trump ? SYM[G.trump]+' '+G.trump : '—';
+  document.getElementById('maker-disp').textContent = G.maker ? NAME[G.maker] : '—';
+  document.getElementById('tricks-disp').textContent = G.phase === 'play' ? `${(G.trickWins||[0,0])[0]} — ${(G.trickWins||[0,0])[1]}` : '—';
+  document.getElementById('score-us').textContent = (G.scores||[0,0])[0];
+  document.getElementById('score-them').textContent = (G.scores||[0,0])[1];
+  document.getElementById('score-us-label').textContent = 'Score · ' + NAME.south + ' & ' + NAME.north;
+  document.getElementById('score-them-label').textContent = 'Score · ' + NAME.west + ' & ' + NAME.east;
+
+  // Dealer chip
+  if (G.dealer) {
+    const chip = document.getElementById('dealer-chip');
+    const dpos = DEALER_POS[G.dealer];
+    chip.style.bottom = dpos.bottom||'auto'; chip.style.top = dpos.top||'auto';
+    chip.style.left = dpos.left||'auto'; chip.style.right = dpos.right||'auto';
+  }
+
+  // Active indicators
+  ALL_P.forEach(s => {
+    const ind = document.getElementById('ind-' + s);
+    ind.style.display = (G.phase === 'play' && G.current === s) ? 'block' : 'none';
+  });
+
+  // Upcard
+  if (G.upcard && G.phase === 'bid') {
+    document.getElementById('upcard-zone').classList.add('visible');
+    const ucCard = document.getElementById('upcard-card');
+    ucCard.innerHTML = '';
+    ucCard.appendChild(makeCardEl(G.upcard));
+  } else if (G.phase !== 'bid') {
+    document.getElementById('upcard-zone').classList.remove('visible');
+  }
+
+  // Render bidding UI if it's my turn
+  if (G.phase === 'bid' && G.bidOrder && G.bidOrder[G.bidIdx] === mySeat) {
+    showMyBidUI();
+  } else if (G.phase === 'play' && G.current === mySeat) {
+    setMsg(makePlayMsg());
+    closeActionPanel();
+  } else if (G.phase === 'bid') {
+    const bidder = G.bidOrder ? G.bidOrder[G.bidIdx] : null;
+    if (bidder) setMsg(`${NAME[bidder]} is deciding...`);
+  }
+}
+
+function setMsg(t) { document.getElementById('msg-bar').textContent = t; }
+
+function openActionPanel(html) {
+  const p = document.getElementById('action-panel');
+  p.innerHTML = html; p.classList.add('open');
+}
+function closeActionPanel() {
+  const p = document.getElementById('action-panel');
+  p.classList.remove('open'); p.innerHTML = '';
+}
+function openModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function toggleHelp() { document.getElementById('help-panel').classList.toggle('open'); }
+
+// ═══════════════════════════════════════════
+// PLAYABILITY CHECK
+// ═══════════════════════════════════════════
+function canPlayCard(seat, idx, isMystery) {
+  if (G.phase !== 'play' || G.current !== seat) return false;
+  if (G.sittingOut === seat) return false;
+  if (isMystery) return !G.mystUsed[seat] && G.myst[seat] !== null;
+  if (idx < 0 || idx >= G.hands[seat].length) return false;
+  const card = G.hands[seat][idx];
+  if (!card) return false;
+  if (!G.ledSuit) return true;
+  const hasSuit = G.hands[seat].some(c => effSuit(c, G.trump) === G.ledSuit);
+  if (!hasSuit) return true;
+  return effSuit(card, G.trump) === G.ledSuit;
+}
+
+function makePlayMsg() {
+  const hasMyst = !G.mystUsed[mySeat] && G.myst[mySeat];
+  if (!G.ledSuit) return hasMyst ? 'Your turn — lead any card, or play ✦ Mystery card.' : 'Your turn — lead any card.';
+  const hasSuit = G.hands[mySeat].some(c => effSuit(c, G.trump) === G.ledSuit);
+  if (hasMyst) return hasSuit ? `Must follow ${SYM[G.ledSuit]} — or play ✦ Mystery!` : `No ${SYM[G.ledSuit]} — play any card or Mystery!`;
+  if (hasSuit) return `Must follow ${SYM[G.ledSuit]}.`;
+  return `No ${SYM[G.ledSuit]} — play any card.`;
+}
+
+// ═══════════════════════════════════════════
+// HUMAN ACTIONS — modify G and push to Firebase
+// ═══════════════════════════════════════════
+function humanPlayCard(idx) {
+  if (!canPlayCard(mySeat, idx, false)) return;
+  const ng = JSON.parse(JSON.stringify(G));
+  applyPlayCard(ng, mySeat, idx, false);
+  pushAndProcess(ng);
+}
+
+function humanPlayMystery() {
+  if (!canPlayCard(mySeat, -1, true)) return;
+  const ng = JSON.parse(JSON.stringify(G));
+  applyPlayCard(ng, mySeat, -1, true);
+  pushAndProcess(ng);
+}
+
+function humanBidOrder(alone) {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  if (alone) setGoingAloneState(ng, mySeat);
+  applyOrderUp(ng, mySeat);
+  pushAndProcess(ng);
+}
+
+function humanBidPass1() {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  ng.bidIdx++;
+  pushAndProcess(ng);
+}
+
+function humanNameSuit(s) {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  applyNameTrump(ng, mySeat, s);
+  pushAndProcess(ng);
+}
+
+function humanNameSuitAlone(s) {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  setGoingAloneState(ng, mySeat);
+  applyNameTrump(ng, mySeat, s);
+  pushAndProcess(ng);
+}
+
+function humanBidPass2() {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  ng.bidIdx++;
+  pushAndProcess(ng);
+}
+
+function humanDiscard(idx) {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  ng.hands[mySeat].splice(idx, 1);
+  applyStartPlay(ng);
+  pushAndProcess(ng);
+}
+
+function humanStuckName(suit) {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  applyNameTrump(ng, mySeat, suit);
+  pushAndProcess(ng);
+}
+
+function humanTradeKittyAction() {
+  closeActionPanel();
+  const ng = JSON.parse(JSON.stringify(G));
+  const oldHand = ng.hands[mySeat].slice();
+  ng.hands[mySeat] = ng.kitty.slice(0, 4);
+  ng.kitty = oldHand;
+  ng.tradeFlipped = [ng.hands[mySeat][0], ng.hands[mySeat][1]];
+  // Show flipped + ask trump via action panel after push
+  pushGameState(ng);
+}
+
+async function pushAndProcess(ng) {
+  // If host, process AI turns chain after push
+  await pushGameState(ng);
+  if (isHost) processAfterPush(ng);
+}
+
+// ═══════════════════════════════════════════
+// GAME LOGIC (pure state mutations, no DOM)
+// ═══════════════════════════════════════════
+function playOrder(ng) {
+  let o = [...ALL_P];
+  if (ng.goingAlone && ng.sittingOut) o = o.filter(p => p !== ng.sittingOut);
+  while (o[0] !== ng.leader) o.push(o.shift());
+  if (ng.goingAlone && ng.sittingOut && o[0] === ng.sittingOut) o.shift();
+  return o;
+}
+
+function applyPlayCard(ng, seat, cardIdx, isMystery) {
+  let card;
+  if (isMystery) {
+    card = ng.myst[seat];
+    ng.mystUsed[seat] = true;
+    if (ng.ledSuit === ng.trump) ng.mystBrokeTrump[seat] = true;
+    ng.myst[seat] = null;
+  } else {
+    card = ng.hands[seat][cardIdx];
+    ng.hands[seat].splice(cardIdx, 1);
+  }
+  if (!ng.ledSuit) ng.ledSuit = effSuit(card, ng.trump);
+  ng.trick[seat] = { card, isMystery };
+
+  const order = playOrder(ng);
+  const idx = order.indexOf(seat);
+  if (idx < order.length - 1) {
+    ng.current = order[idx+1];
+  } else {
+    ng.current = null;
+    ng.phase = 'resolving';
+  }
+}
+
+function setGoingAloneState(ng, player) {
+  ng.goingAlone = true;
+  ng.loner = player;
+  ng.sittingOut = PARTNER[player];
+}
+
+function applyOrderUp(ng, player) {
+  ng.trump = ng.upcard.s;
+  ng.maker = player;
+  ng.makerTeam = TEAM[player];
+  ng.hands[ng.dealer].push(ng.upcard);
+  ng.kitty.shift();
+  ng.phase = 'discard';
+  if (ng.dealer !== mySeat) {
+    // AI dealer discards immediately
+    aiDiscardState(ng, ng.dealer);
+    applyStartPlay(ng);
+  }
+}
+
+function aiDiscardState(ng, player) {
+  const hand = ng.hands[player];
+  let li = 0;
+  hand.forEach((c,i) => { if (cardVal(c,ng.trump,null) < cardVal(hand[li],ng.trump,null)) li = i; });
+  hand.splice(li, 1);
+}
+
+function applyNameTrump(ng, player, suit) {
+  ng.trump = suit;
+  ng.maker = player;
+  ng.makerTeam = TEAM[player];
+  applyStartPlay(ng);
+}
+
+function applyStartPlay(ng) {
+  ng.phase = 'play';
+  ng.trickWins = [0,0];
+  ng.trickCount = 0;
+  ng.trick = {south:null,west:null,north:null,east:null};
+  ng.ledSuit = null;
+  const di = ALL_P.indexOf(ng.dealer);
+  let firstLeader = ALL_P[(di+1)%4];
+  if (ng.sittingOut === firstLeader) firstLeader = ALL_P[(di+2)%4];
+  ng.leader = firstLeader;
+  ng.current = firstLeader;
+}
+
+function applyResolveTrick(ng) {
+  const activePlayers = ALL_P.filter(p => p !== ng.sittingOut);
+  let winner = ng.leader;
+  let winCard = ng.trick[ng.leader] ? ng.trick[ng.leader].card : null;
+  if (!winCard) {
+    const first = activePlayers.find(p => ng.trick[p]);
+    if (first) { winner = first; winCard = ng.trick[first].card; }
+  }
+  activePlayers.forEach(p => {
+    if (!ng.trick[p] || p === winner) return;
+    if (beats(ng.trick[p].card, winCard, ng.trump, ng.ledSuit)) {
+      winner = p; winCard = ng.trick[p].card;
+    }
+  });
+  ng.trickWins[TEAM[winner]]++;
+  ng.trickCount++;
+  ng.lastTrickWinner = winner;
+  ng.lastTrick = JSON.parse(JSON.stringify(ng.trick));
+  ng.trick = {south:null,west:null,north:null,east:null};
+  ng.ledSuit = null;
+  ng.leader = winner;
+  const maxTricks = ng.goingAlone ? 4 : 5;
+  if (ng.trickCount >= maxTricks) {
+    applyEndHand(ng);
+  } else {
+    ng.current = winner;
+    ng.phase = 'play';
+  }
+}
+
+function applyEndHand(ng) {
+  const mt = ng.makerTeam, ot = 1 - mt;
+  const tricks = ng.trickWins[mt];
+  let pts = [0,0];
+  if (tricks >= 3) {
+    if (tricks === 4 && ng.goingAlone && ng.loner) { pts[mt] = 6; }
+    else if (tricks === 5) { pts[mt] = 2; }
+    else { pts[mt] = 1; }
+  } else {
+    pts[ot] = 2;
+  }
+  ng.scores[0] += pts[0];
+  ng.scores[1] += pts[1];
+  ng.lastHandResult = { tricks, pts, mt, loner: ng.loner };
+  if (ng.scores[0] >= 10 || ng.scores[1] >= 10) {
+    ng.phase = 'gameover';
+  } else {
+    // Start new hand
+    ng.dealer = ALL_P[(ALL_P.indexOf(ng.dealer)+1)%4];
+    applyNewHand(ng);
+  }
+}
+
+function applyNewHand(ng) {
+  const deck = makeDeck();
+  const di = ALL_P.indexOf(ng.dealer);
+  ng.hands = {}; ng.myst = {};
+  for (let i=0;i<4;i++) {
+    const p = ALL_P[(di+1+i)%4];
+    ng.hands[p] = deck.slice(i*5, i*5+4);
+    ng.myst[p] = deck[i*5+4];
+  }
+  ng.kitty = deck.slice(20);
+  ng.upcard = ng.kitty[0];
+  ng.trump = null; ng.maker = null; ng.makerTeam = null;
+  ng.mystUsed = {south:false,west:false,north:false,east:false};
+  ng.mystBrokeTrump = {south:false,west:false,north:false,east:false};
+  ng.trick = {south:null,west:null,north:null,east:null};
+  ng.trickWins = [0,0]; ng.trickCount = 0;
+  ng.ledSuit = null; ng.leader = null; ng.current = null;
+  ng.goingAlone = false; ng.loner = null; ng.sittingOut = null;
+  ng.tradeFlipped = null;
+  const di2 = ALL_P.indexOf(ng.dealer);
+  ng.bidOrder = [ALL_P[(di2+1)%4], ALL_P[(di2+2)%4], ALL_P[(di2+3)%4], ALL_P[di2]];
+  ng.bidRound = 1; ng.bidIdx = 0;
+  ng.phase = 'bid';
+}
+
+// ═══════════════════════════════════════════
+// HOST: PROCESS AI TURNS AFTER ANY PUSH
+// ═══════════════════════════════════════════
+async function processAfterPush(ng) {
+  if (!isHost) return;
+  let changed = false;
+
+  // Resolving trick
+  if (ng.phase === 'resolving') {
+    await new Promise(r => setTimeout(r, 1400));
+    applyResolveTrick(ng);
+    changed = true;
+  }
+
+  // Bidding
+  if (ng.phase === 'bid') {
+    const bidder = ng.bidOrder[ng.bidIdx];
+    if (bidder && !isSeatHumanAny(bidder)) {
+      await new Promise(r => setTimeout(r, 600));
+      doAIBidOnState(ng, bidder);
+      changed = true;
+    }
+  }
+
+  // Play
+  if (ng.phase === 'play' && ng.current && !isSeatHumanAny(ng.current)) {
+    await new Promise(r => setTimeout(r, 800));
+    doAIPlayOnState(ng, ng.current);
+    changed = true;
+    // Chain if still AI turn
+    if (!isSeatHumanAny(ng.current)) {
+      await new Promise(r => setTimeout(r, 700));
+      doAIPlayOnState(ng, ng.current);
+    }
+  }
+
+  // Game over
+  if (ng.phase === 'gameover') {
+    await pushGameState(ng);
+    showGameOver(ng);
+    return;
+  }
+
+  if (changed) await pushGameState(ng);
+}
+
+// ═══════════════════════════════════════════
+// AI BIDDING LOGIC
+// ═══════════════════════════════════════════
+function doAIBidOnState(ng, player) {
+  if (ng.bidRound === 1) {
+    if (aiShouldOrderUp(ng, player)) {
+      if (aiShouldGoAlone(ng, player, ng.upcard.s)) setGoingAloneState(ng, player);
+      applyOrderUp(ng, player);
+      return;
+    }
+    ng.bidIdx++;
+    if (ng.bidIdx >= ng.bidOrder.length) {
+      ng.bidRound = 2; ng.bidIdx = 0;
+    }
+  } else {
+    const suit = aiPickTrump(ng, player);
+    const isDealer = player === ng.dealer;
+    if (suit || isDealer) {
+      const chosen = suit || SUITS.find(s => s !== ng.upcard.s);
+      if (aiShouldGoAlone(ng, player, chosen)) setGoingAloneState(ng, player);
+      applyNameTrump(ng, player, chosen);
+      return;
+    }
+    ng.bidIdx++;
+    if (ng.bidIdx >= ng.bidOrder.length) {
+      // Dealer stuck — should have been caught above, force pick
+      const forced = SUITS.find(s => s !== ng.upcard.s);
+      applyNameTrump(ng, ng.dealer, forced);
+    }
+  }
+}
+
+function doAIBid(player) {
+  if (!isHost) return;
+  const ng = JSON.parse(JSON.stringify(G));
+  doAIBidOnState(ng, player);
+  pushAndProcess(ng);
+}
+
+function aiShouldOrderUp(ng, player) {
+  const hand = ng.hands[player], suit = ng.upcard.s;
+  const isTeammate = TEAM[player] === TEAM[ng.dealer];
+  let count = hand.filter(c => effSuit(c,suit)===suit).length;
+  if (ng.myst[player] && effSuit(ng.myst[player],suit)===suit) count++;
+  const hasRight = hand.some(c=>c.r==='J'&&c.s===suit)||(ng.myst[player]?.r==='J'&&ng.myst[player]?.s===suit);
+  return hasRight || count >= (isTeammate ? 2 : 3);
+}
+
+function aiPickTrump(ng, player) {
+  const hand = ng.hands[player], avoid = ng.upcard.s;
+  let best = null, bestN = 1;
+  SUITS.filter(s=>s!==avoid).forEach(s => {
+    let n = hand.filter(c=>effSuit(c,s)===s).length;
+    if (ng.myst[player] && effSuit(ng.myst[player],s)===s) n++;
+    if (n > bestN) { bestN = n; best = s; }
+  });
+  return best;
+}
+
+function aiShouldGoAlone(ng, player, suit) {
+  const hand = ng.hands[player], myst = ng.myst[player];
+  let trumps = hand.filter(c=>effSuit(c,suit)===suit).length;
+  if (myst && effSuit(myst,suit)===suit) trumps++;
+  const hasRight = hand.some(c=>c.r==='J'&&c.s===suit)||(myst?.r==='J'&&myst?.s===suit);
+  return hasRight && trumps >= 4;
+}
+
+// ═══════════════════════════════════════════
+// AI PLAY LOGIC
+// ═══════════════════════════════════════════
+function doAIPlayOnState(ng, player) {
+  if (ng.phase !== 'play' || ng.current !== player) return;
+  const hand = ng.hands[player];
+  const hasMyst = !ng.mystUsed[player] && ng.myst[player];
+  const isLead = !ng.ledSuit;
+  let idx = 0, useMystery = false;
+
+  if (isLead) {
+    const isMaker = ng.makerTeam === TEAM[player];
+    const partner = PARTNER[player];
+    const partnerBrokeTrump = ng.mystBrokeTrump[partner];
+    const trumpCards = hand.map((c,i)=>({i,c,v:cardVal(c,ng.trump,null)})).filter(x=>x.v>=100);
+    const offSuitCards = hand.map((c,i)=>({i,c,v:cardVal(c,ng.trump,null)})).filter(x=>x.v<100);
+    const hasBothBowers = trumpCards.filter(x=>x.v>=199).length >= 2;
+    const safeToLeadTrump = !partnerBrokeTrump;
+    let chosen = null;
+    if (hasBothBowers && safeToLeadTrump) {
+      chosen = trumpCards.find(x=>x.v===200)||trumpCards.find(x=>x.v===199);
+    } else if (offSuitCards.length > 0) {
+      offSuitCards.sort((a,b)=>isMaker ? b.v-a.v : a.v-b.v);
+      chosen = offSuitCards[0];
+    } else if (trumpCards.length > 0) {
+      trumpCards.sort((a,b)=>a.v-b.v); chosen = trumpCards[0];
+    }
+    if (chosen) idx = chosen.i;
+    else if (hasMyst) useMystery = true;
+  } else {
+    const led = ng.ledSuit;
+    const suitCards = hand.map((c,i)=>({i,c,v:cardVal(c,ng.trump,led)})).filter(x=>effSuit(x.c,ng.trump)===led);
+    const hasSuit = suitCards.length > 0;
+    const ledIsTrump = led === ng.trump;
+
+    if (!hasSuit) {
+      const trumpCards = hand.map((c,i)=>({i,v:cardVal(c,ng.trump,led)})).filter(x=>x.v>=100);
+      const offCards = hand.map((c,i)=>({i,v:cardVal(c,ng.trump,led)})).filter(x=>x.v<100);
+      // Find current trick winner
+      const played = ALL_P.filter(p=>ng.trick[p]);
+      let curWinner = null, curWinCard = null;
+      played.forEach(p => {
+        if (!curWinner){curWinner=p;curWinCard=ng.trick[p].card;return;}
+        if (beats(ng.trick[p].card,curWinCard,ng.trump,ng.ledSuit)){curWinner=p;curWinCard=ng.trick[p].card;}
+      });
+      const partnerWinning = curWinner && TEAM[curWinner]===TEAM[player];
+      const curWinVal = curWinner ? cardVal(curWinCard,ng.trump,led) : -1;
+      const lowestOff = ()=>offCards.length>0?offCards.reduce((a,b)=>a.v<=b.v?a:b).i:lowestIdx(hand,ng);
+      if (partnerWinning) { idx = lowestOff(); }
+      else if (trumpCards.length > 0) {
+        const beaters = trumpCards.filter(x=>x.v>curWinVal);
+        if (beaters.length>0){beaters.sort((a,b)=>a.v-b.v);idx=beaters[0].i;}
+        else idx = lowestOff();
+      } else if (hasMyst) {
+        const mv = cardVal(ng.myst[player],ng.trump,led);
+        if (!partnerWinning && mv>curWinVal) useMystery = true;
+        else idx = lowestIdx(hand,ng);
+      } else idx = lowestIdx(hand,ng);
+    } else {
+      if (ledIsTrump && hasMyst) {
+        useMystery = true;
+      } else {
+        const winnerP = trickWinnerSoFarState(ng);
+        const teamWin = winnerP && TEAM[winnerP]===TEAM[player];
+        const winVal = winnerP ? cardVal(ng.trick[winnerP].card,ng.trump,led) : -1;
+        if (teamWin) {
+          suitCards.sort((a,b)=>a.v-b.v); idx = suitCards[0].i;
+        } else {
+          const beaters = suitCards.filter(x=>x.v>winVal);
+          if (beaters.length>0){beaters.sort((a,b)=>a.v-b.v);idx=beaters[0].i;}
+          else if (hasMyst){const mv=cardVal(ng.myst[player],ng.trump,led);if(mv>winVal)useMystery=true;else{suitCards.sort((a,b)=>a.v-b.v);idx=suitCards[0].i;}}
+          else{suitCards.sort((a,b)=>a.v-b.v);idx=suitCards[0].i;}
+        }
+      }
+    }
+  }
+
+  if (!useMystery && hand.length===0 && hasMyst) useMystery = true;
+  if (!useMystery && (idx<0||idx>=ng.hands[player].length)) {
+    const fb = ng.hands[player].findIndex((_,i)=>{
+      if(!ng.ledSuit)return true;
+      const hs=ng.hands[player].some(c=>effSuit(c,ng.trump)===ng.ledSuit);
+      if(!hs)return true;
+      return effSuit(ng.hands[player][i],ng.trump)===ng.ledSuit;
+    });
+    idx = fb>=0?fb:0;
+  }
+  applyPlayCard(ng, player, idx, useMystery);
+}
+
+function doAIPlay(player) {
+  if (!isHost) return;
+  const ng = JSON.parse(JSON.stringify(G));
+  doAIPlayOnState(ng, player);
+  pushAndProcess(ng);
+}
+
+function trickWinnerSoFarState(ng) {
+  let winner = null, winCard = null;
+  ALL_P.forEach(p => {
+    if (!ng.trick[p]) return;
+    if (!winner){winner=p;winCard=ng.trick[p].card;return;}
+    if (beats(ng.trick[p].card,winCard,ng.trump,ng.ledSuit)){winner=p;winCard=ng.trick[p].card;}
+  });
+  return winner;
+}
+
+function lowestIdx(hand, ng) {
+  let li = 0;
+  hand.forEach((c,i)=>{if(cardVal(c,ng?ng.trump:G.trump,ng?ng.ledSuit:G.ledSuit)<cardVal(hand[li],ng?ng.trump:G.trump,ng?ng.ledSuit:G.ledSuit))li=i;});
+  return li;
+}
+
+// ═══════════════════════════════════════════
+// BIDDING UI (shown to my seat when it's my turn)
+// ═══════════════════════════════════════════
+function showMyBidUI() {
+  if (G.phase !== 'bid') return;
+  if (G.bidOrder[G.bidIdx] !== mySeat) return;
+  if (G.bidRound === 1) {
+    const uc = G.upcard;
+    const col = uc.s==='H'||uc.s==='D' ? '#ff7070' : '#f5edd6';
+    const btnClass = uc.s==='H'||uc.s==='D' ? 'mbtn-suit-r' : 'mbtn-suit-b';
+    openActionPanel(`
+      <h2>Order Up?</h2>
+      <p>Upcard — <span style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:${col}">${uc.r}${SYM[uc.s]}</span></p>
+      <p style="font-size:0.82rem;color:var(--cream)">${NAME[G.dealer]} picks it up. ${SYM[uc.s]} becomes trump.</p>
+      <div class="btn-row">
+        <button class="mbtn ${btnClass}" onclick="window.humanBidOrder(false)">Order Up! ${SYM[uc.s]}</button>
+        <button class="mbtn mbtn-alone" onclick="window.humanBidOrder(true)">⚡ Go Alone</button>
+        <button class="mbtn mbtn-pass" onclick="window.humanBidPass1()">Pass</button>
+      </div>
+    `);
+  } else {
+    const avoid = G.upcard.s;
+    const isDealer = mySeat === G.dealer;
+    const btns = SUITS.filter(s=>s!==avoid).map(s=>`<button class="mbtn ${s==='H'||s==='D'?'mbtn-suit-r':'mbtn-suit-b'}" onclick="window.humanNameSuit('${s}')">${SYM[s]} ${s}</button>`).join('');
+    const aloneBtns = SUITS.filter(s=>s!==avoid).map(s=>`<button class="mbtn mbtn-alone" onclick="window.humanNameSuitAlone('${s}')">⚡ ${SYM[s]}</button>`).join('');
+    openActionPanel(`
+      <h2>Name Trump</h2>
+      <p>Cannot name ${SYM[avoid]}. Choose:</p>
+      <div class="btn-row">${btns}${!isDealer?`<button class="mbtn mbtn-pass" onclick="window.humanBidPass2()">Pass</button>`:''}</div>
+      <div class="btn-row" style="margin-top:6px">${aloneBtns}</div>
+    `);
+  }
+}
+
+
+
+  function buildNameMap(seats){
+    const used=ALL_P.map(s=>seats[s]?.name).filter(Boolean);
+    const avail=AI_NAMES.filter(n=>!used.includes(n));
+    ALL_P.forEach((s,i)=>{NAME[s]=seats[s]?seats[s].name:(avail[i%avail.length]||'AI');});
+  }
+
+  function buildInitialGameState(){
+    const deck=makeDeck(),dealer='south',di=0;
+    const hands={},myst={};
+    for(let i=0;i<4;i++){const p=ALL_P[(di+1+i)%4];hands[p]=deck.slice(i*5,i*5+4);myst[p]=deck[i*5+4];}
+    const kitty=deck.slice(20);
+    return{trump:null,maker:null,makerTeam:null,hands,myst,
+      mystUsed:{south:false,west:false,north:false,east:false},
+      mystBrokeTrump:{south:false,west:false,north:false,east:false},
+      trick:{south:null,west:null,north:null,east:null},
+      trickWins:[0,0],trickCount:0,ledSuit:null,leader:null,current:null,
+      phase:'bid',upcard:kitty[0],kitty,bidRound:1,bidIdx:0,
+      bidOrder:[ALL_P[1],ALL_P[2],ALL_P[3],ALL_P[0]],
+      goingAlone:false,loner:null,sittingOut:null,tradeFlipped:null,
+      scores:[0,0],dealer,seq:0};
+  }
+
+  async function pushG(ng){ng.seq=(ng.seq||0)+1;await set(ref(db,'rooms/'+myTable+'/gameState'),ng);}
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+  // ── FIREBASE LOBBY ──
+  window.fbLoadTables = function(){
+    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+    tablesListener=onValue(ref(db,'rooms'),snap=>{
+      const all=snap.val()||{};
+      TBLS.forEach(t=>updateTableUI(t.id,all[t.id]||null));
+    },err=>{dbg('DB read error: '+err.message);});
+    dbg('Listening to tables…');
+  };
+  window.stopTableListener = function(){
+    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+  };
+
+  window.fbClaimSeat = async function(tableId, seat, nameArg){
+    const _name = nameArg || window._myName; const _id=window._playerId;
+    if(!_name){showScr('name');return;}
+    mySeat=seat; myTable=tableId; roomRef=ref(db,'rooms/'+tableId);
+    if(tablesListener){off(ref(db,'rooms'));tablesListener=null;};
+    dbg('Claiming '+seat+' at '+tableId+'…');
+    const snap=await get(roomRef);
+    if(!snap.exists()){
+      isHost=true;
+      const seats={south:null,west:null,north:null,east:null};
+      seats[seat]={id:_id,name:_name,human:true};
+      await set(roomRef,{seats,phase:'lobby',host:_id,created:serverTimestamp()});
+    } else {
+      const d=snap.val();
+      if(d.phase!=='lobby'){document.getElementById('tbl-status').textContent='That game is in progress.';window.fbLoadTables();return;}
+      if(d.seats?.[seat]&&d.seats[seat].id!==_id){document.getElementById('tbl-status').textContent='Seat just taken!';window.fbLoadTables();return;}
+      for(const s of ALL_P){if(d.seats?.[s]?.id===_id&&s!==seat)await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);}
+      isHost=!d.host||d.host===_id;
+      await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:_id,name:_name,human:true});
+      if(!d.host)await update(roomRef,{host:_id});
+    }
+    subscribeRoom();
+  };
+
+  window.fbLeaveSeat = async function(){
+    if(roomRef&&mySeat){
+      await set(ref(db,'rooms/'+myTable+'/seats/'+mySeat),null);
+      const s2=await get(roomRef);
+      if(s2.exists()&&!ALL_P.some(sx=>s2.val().seats?.[sx]))await remove(roomRef);
+      if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
+    }
+    mySeat=null;myTable=null;isHost=false;roomRef=null;
+    showScr('tables');
+    window.fbLoadTables();
+  };
+
+  window.fbStartGame = async function(){
+    const snap=await get(roomRef);
+    if(!snap.exists())return;
+    const d=snap.val();
+    roomSeats=d.seats||{};
+    buildNameMap(roomSeats);
+    const gs=buildInitialGameState();
+    await update(roomRef,{phase:'playing',gameState:gs});
+    dbg('Game started!');
+  };
+
+  window.fbReturnToTables = async function(){
+    if(gameListener){off(ref(db,'rooms/'+myTable+'/gameState'));gameListener=null;}
+    if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
+    if(roomRef){try{await update(roomRef,{phase:'lobby',gameState:null});}catch(e){}}
+    mySeat=null;myTable=null;isHost=false;roomRef=null;
+    showLobby();
+    showScr('tables');
+    renderTablesSkeleton();
+    window.fbLoadTables();
+  };
+
+  function subscribeRoom(){
+    if(roomListener)off(ref(db,'rooms/'+myTable));
+    roomListener=onValue(ref(db,'rooms/'+myTable),snap=>{
+      dbg('Room snapshot received, exists='+snap.exists());
+      if(!snap.exists()){window.fbLeaveSeat();return;}
+      const d=snap.val();
+      if(d.seats)roomSeats=d.seats;
+      if(d.phase==='lobby'){
+        dbg('LOBBY phase seen! table='+myTable+' seat='+mySeat);
+        // Call showSeatedView directly 
+        try {
+          showSeatedView(myTable, mySeat, d);
+          dbg('showSeatedView called OK');
+        } catch(e) {
+          dbg('showSeatedView ERROR: '+e.message);
+          // Fallback: manually switch screen
+          document.querySelectorAll('.scr').forEach(el=>el.classList.remove('active'));
+          document.getElementById('scr-seated').classList.add('active');
+          dbg('Fallback screen switch done');
+        }
+      } else if(d.phase==='playing'&&d.gameState){
+        hideLobby();
+        buildNameMap(roomSeats);
+        G=d.gameState;
+        renderAll_ext();
+        off(ref(db,'rooms/'+myTable));roomListener=null;
+        startGameListener();
+      }
+    });
+    dbg('Subscribed to room. Waiting for snapshot…'); //dbg('Subscribed to room '+myTable);
+  }
+
+  function startGameListener(){
+    const gsRef=ref(db,'rooms/'+myTable+'/gameState');
+    gameListener=onValue(gsRef,snap=>{
+      if(!snap.exists())return;
+      const prev=G.seq;
+      G=snap.val();
+      renderAll_ext();
+      if(isHost&&G.seq!==prev) processAI(JSON.parse(JSON.stringify(G)));
+    });
+    onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
+      if(snap.exists()){roomSeats=snap.val();buildNameMap(roomSeats);renderAll_ext();}
+    });
+  }
+
+  async function processAI(ng){
+    if(!isHost)return;
+    if(ng.phase==='resolving'){
+      await sleep(1400);applyResolveTrick(ng);
+      if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
+      await pushG(ng);processAI(ng);return;
+    }
+    if(ng.phase==='bid'){
+      const b=ng.bidOrder?.[ng.bidIdx];
+      if(b&&!roomSeats[b]?.human){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+    }
+    if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]?.human){
+      await sleep(800);doAIPlayOnState(ng,ng.current);
+      await pushG(ng);processAI(ng);return;
+    }
+    if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
+  }
+
+  async function act(ng){await pushG(ng);if(isHost)processAI(JSON.parse(JSON.stringify(ng)));}
+
+  // ── RENDER EXTENSION ──
+  let lastSeq=-1;
+  function renderAll_ext(){
+    if(!G||!G.hands)return;
+    renderAll();
+    if(G.seq===lastSeq)return;
+    lastSeq=G.seq;
+    if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
+    if(G.phase==='bid'&&G.bidRound===2){
+      const b=G.bidOrder?.[G.bidIdx];
+      if(b===mySeat&&b===G.dealer)showStuckUI();
+    }
+    if(G.lastTrickWinner&&G.phase==='play'){
+      const fl=document.getElementById('winner-flash');
+      if(fl){fl.textContent=NAME[G.lastTrickWinner]+' wins the trick!';fl.style.display='block';setTimeout(()=>fl.style.display='none',1600);}
+    }
+    if(G.phase==='gameover')showGameOver(G);
+    if(G.phase==='bid'){
+      const b=G.bidOrder?.[G.bidIdx];
+      if(b!==mySeat)setMsg((b?NAME[b]:'?')+' is deciding…');
+    } else if(G.phase==='play'){
+      if(G.current===mySeat)setMsg(makePlayMsg());
+      else if(G.current){setMsg(NAME[G.current]+' is thinking…');closeActionPanel();}
+    } else if(G.phase==='discard'&&G.dealer!==mySeat){
+      setMsg(NAME[G.dealer]+' is discarding…');
+    }
+  }
+
+  function showStuckUI(){
+    const btns=SUITS.map(s=>`<button class="mbtn ${s==='H'||s==='D'?'mbtn-suit-r':'mbtn-suit-b'}" onclick="window.humanStuckName('${s}')">${SYM[s]} ${s}</button>`).join('');
+    openActionPanel(`<h2>You're Stuck!</h2><p>Everyone passed. Name any trump.</p><div class="btn-row">${btns}</div><div class="btn-row" style="margin-top:8px"><button class="mbtn mbtn-alone" onclick="window.humanTradeKittyAction()">🔄 Trade Hand for Kitty</button></div>`);
+  }
+
+  function showDiscardUI(){
+    const hand=G.hands[mySeat];
+    const btns=hand.map((c,i)=>{const t=effSuit(c,G.trump)===G.trump,r=c.s==='H'||c.s==='D';return`<button class="mbtn mbtn-discard ${r?'is-red':''} ${t?'is-trump':''}" onclick="window.humanDiscard(${i})">${c.r}${SYM[c.s]}${t?' ★':''}</button>`;}).join('');
+    const pu=hand[hand.length-1];
+    openActionPanel(`<h2>Discard a Card</h2><p>Picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p><p style="font-size:0.82rem;color:var(--gold)">✦ mystery can't be discarded. Trump ★</p><div class="btn-row">${btns}</div>`);
+  }
+
+  function showGameOver(ng){
+    const hr=ng.lastHandResult,mt=hr?hr.mt:0;
+    let result='',emoji='🎉';
+    if(hr){if(hr.tricks>=3){if(hr.pts[mt]===6){result=NAME[hr.loner]+' went ALONE! 6 pts!';emoji='🌟';}else if(hr.tricks===5)result=(mt===0?NAME.south+'&'+NAME.north:NAME.west+'&'+NAME.east)+' swept!';else result='Makers got '+hr.tricks+' tricks.';}else{result='EUCHRED!';emoji='😬';}}
+    const ws=ng.scores[0]>=10?`${NAME.south} &amp; ${NAME.north} WIN! 🏆`:`${NAME.west} &amp; ${NAME.east} win.`;
+    openModal(`<h2>Game Over ${emoji}</h2><p>${result}</p><p style="margin:10px 0;font-size:1.1rem">Final: <b>${ng.scores[0]}</b> — <b>${ng.scores[1]}</b></p><p style="color:var(--gold-bright);font-size:1.1rem;font-family:'Playfair Display',serif">${ws}</p><div class="btn-row"><button class="mbtn mbtn-newgame" onclick="window.closeModal();window.returnToTables()">Back to Tables</button></div>`);
+  }
+
+  // human action handlers
+  window._hBO  = a=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));if(a)setGoingAloneState(ng,mySeat);applyOrderUp(ng,mySeat);act(ng);};
+  window._hBP1 = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
+  window._hNS  = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
+  window._hNSA = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));setGoingAloneState(ng,mySeat);applyNameTrump(ng,mySeat,s);act(ng);};
+  window._hBP2 = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
+  window._hD   = i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.hands[mySeat].splice(i,1);applyStartPlay(ng);act(ng);};
+  window._hSN  = s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
+  window._hTK  = ()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
+  window.humanPlayCard    = i=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);};
+  window.humanPlayMystery = ()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
+
+  // expose to regular script
+  window.myId   = myId;
+  window.myName = myName;
+  // sync myId/myName from outer scope
+  Object.defineProperty(window,'myId',{get:()=>myId});
+  Object.defineProperty(window,'myName',{get:()=>window._myName||myName,set:v=>{myName=v;}});
+
+  dbg('Module ready ✓');
+
+  // auto-load tables if already on that screen
+  if(document.getElementById('scr-tables').classList.contains('active')){
+    window.fbLoadTables();
+  }
+
+} catch(e) {
+  dbg('FIREBASE ERROR: '+e.message);
+}
+</script>
+</body>
+</html>
