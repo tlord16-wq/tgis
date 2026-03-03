@@ -464,7 +464,9 @@ function showScr(id) {
 
 // ── NAME SCREEN ──
 document.getElementById('cont-btn').onclick = function() {
+  alert('Continue clicked!');
   const n = document.getElementById('inp-name').value.trim();
+  alert('Name: ' + n);
   if (!n) { document.getElementById('name-err').textContent = 'Please enter your name.'; return; }
   document.getElementById('name-err').textContent = '';
   myName = n;
