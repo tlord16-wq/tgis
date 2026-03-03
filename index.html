@@ -1500,8 +1500,18 @@ function showMyBidUI() {
       const d=snap.val();
       if(d.seats)roomSeats=d.seats;
       if(d.phase==='lobby'){
-        dbg('Phase lobby, showing seated view for '+myTable+'/'+mySeat);
-        showSeatedView(myTable,mySeat,d);
+        dbg('LOBBY phase seen! table='+myTable+' seat='+mySeat);
+        // Call showSeatedView directly 
+        try {
+          showSeatedView(myTable, mySeat, d);
+          dbg('showSeatedView called OK');
+        } catch(e) {
+          dbg('showSeatedView ERROR: '+e.message);
+          // Fallback: manually switch screen
+          document.querySelectorAll('.scr').forEach(el=>el.classList.remove('active'));
+          document.getElementById('scr-seated').classList.add('active');
+          dbg('Fallback screen switch done');
+        }
       } else if(d.phase==='playing'&&d.gameState){
         hideLobby();
         buildNameMap(roomSeats);
