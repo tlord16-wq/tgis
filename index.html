@@ -416,6 +416,12 @@ body {
    </div>
   </div>
   <div id="scr-tables" class="scr">
+   <div id="rejoin-banner" style="display:none;background:rgba(201,168,76,0.15);border:1px solid #c9a84c;border-radius:10px;padding:10px 14px;margin-bottom:12px;text-align:center;">
+    <div style="color:#f0cc70;font-family:'Playfair Display',serif;font-size:0.9rem;margin-bottom:6px;">↩ Active session found</div>
+    <div id="rejoin-banner-info" style="color:#c9a84c;font-size:0.8rem;margin-bottom:8px;"></div>
+    <button class="lbtn lbtn-gold" id="rejoin-banner-btn" style="margin-bottom:4px;">↩ Rejoin Game</button>
+    <button class="lbtn lbtn-dim" id="rejoin-banner-clear" style="font-size:0.75rem;padding:5px;">Clear &amp; Start Fresh</button>
+   </div>
    <div style="color:#c9a84c;margin-bottom:14px;font-family:'Crimson Text',serif;font-size:0.95rem;">
     Welcome, <strong id="name-show" style="font-family:'Playfair Display',serif;color:#f0cc70;"></strong>! Pick a seat.
    </div>
@@ -461,6 +467,8 @@ function dbg(msg){
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
   document.getElementById('scr-'+id).classList.add('active');
+  if(id==='tables') setTimeout(checkRejoinBanner, 100);
+}('active');
 }
 
 // Wire buttons
@@ -485,7 +493,33 @@ document.getElementById('reset-btn').onclick=function(){
 document.getElementById('start-btn').onclick=function(){if(window.fbStartGame)window.fbStartGame();};
 document.getElementById('leave-btn').onclick=function(){if(window.fbLeaveSeat)window.fbLeaveSeat();};
 
-// Pre-fill saved name
+// Check for rejoin session and show banner on tables screen
+function checkRejoinBanner() {
+  try {
+    const sess = JSON.parse(localStorage.getItem('tgis_session')||'null');
+    const banner = document.getElementById('rejoin-banner');
+    if (sess && sess.name && sess.tableId && sess.seat && banner) {
+      const TNAMES = {founders:'♠ Founders', open:'♠ Open Table', lordsarcade:"♠ Lord's Arcade"};
+      document.getElementById('rejoin-banner-info').textContent =
+        sess.name + ' · ' + (TNAMES[sess.tableId]||sess.tableId) + ' · ' + (sess.seat.charAt(0).toUpperCase()+sess.seat.slice(1));
+      banner.style.display = 'block';
+      document.getElementById('rejoin-banner-btn').onclick = function() {
+        myName = sess.name; window._myName = sess.name;
+        document.getElementById('name-show').textContent = sess.name;
+        let attempts = 0;
+        const tryRejoin = () => {
+          if (window.fbClaimSeat) { window.fbClaimSeat(sess.tableId, sess.seat, sess.name); }
+          else if (attempts++ < 40) { setTimeout(tryRejoin, 100); }
+        };
+        tryRejoin();
+      };
+      document.getElementById('rejoin-banner-clear').onclick = function() {
+        localStorage.removeItem('tgis_session');
+        banner.style.display = 'none';
+      };
+    } else if (banner) { banner.style.display = 'none'; }
+  } catch(e) {}
+}
 try{const s=sessionStorage.getItem('tgis_name');if(s)document.getElementById('inp-name').value=s;}catch(e){}
 
 // Check for rejoin session
