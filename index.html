@@ -770,7 +770,7 @@ function renderPlayerHand(seat) {
     const p = isMe && isTurn && canPlayCard(seat, i, false);
     openRow.appendChild(makeCardWrap(
       G.hands[seat][i],
-      { playable: p, onClick: p ? ()=>humanPlayCard(i) : null },
+      { playable: p, onClick: p ? ()=>window._humanPlayCard(i) : null },
       isMe ? {text:'👁 open', color:'rgba(201,168,76,0.75)'} : null,
       isWE
     ));
@@ -786,7 +786,7 @@ function renderPlayerHand(seat) {
     const p = isMe && isTurn && canPlayCard(seat, i, false);
     secRow.appendChild(makeCardWrap(
       showFace ? G.hands[seat][i] : null,
-      { back: !showFace, playable: p, onClick: p ? ()=>humanPlayCard(i) : null },
+      { back: !showFace, playable: p, onClick: p ? ()=>window._humanPlayCard(i) : null },
       isMe ? {text:'🔒 secret', color:'rgba(180,180,180,0.5)'} : null,
       isWE
     ));
@@ -911,13 +911,13 @@ function makePlayMsg() {
 // HUMAN ACTIONS — modify G and push to Firebase
 // ═══════════════════════════════════════════
 function humanPlayCard(idx) {
-  if (!canPlayCard(mySeat, idx, false)) return;
-  const ng = JSON.parse(JSON.stringify(G));
-  applyPlayCard(ng, mySeat, idx, false);
-  pushAndProcess(ng);
+  if (window.humanPlayCard && window.humanPlayCard !== humanPlayCard)
+    { window.humanPlayCard(idx); return; }
 }
 
 function humanPlayMystery() {
+  if (window.humanPlayMystery && window.humanPlayMystery !== humanPlayMystery)
+    { window.humanPlayMystery(); return; }
   if (!canPlayCard(mySeat, -1, true)) return;
   const ng = JSON.parse(JSON.stringify(G));
   applyPlayCard(ng, mySeat, -1, true);
@@ -1653,8 +1653,11 @@ window._hBP2=()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.b
 window._hD  =i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.hands[mySeat].splice(i,1);applyStartPlay(ng);act(ng);};
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
 window._hTK =()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
-window.humanPlayCard   =i=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);};
-window.humanPlayMystery=()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
+window._humanPlayCard =i=>{
+  dbg('humanPlayCard i='+i+' mySeat='+mySeat+' current='+G.current);
+  const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);
+};
+window._humanPlayMystery=()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
 window.closeModal=closeModal;
 window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();};
 window.humanStuckName=s=>window._hSN&&window._hSN(s);
