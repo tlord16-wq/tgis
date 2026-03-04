@@ -325,6 +325,52 @@ body {
 .pdot{width:8px;height:8px;border-radius:50%;background:#5ae05a;flex-shrink:0;}
 .pdot.ai{background:rgba(201,168,76,0.4);}
 #debug{position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:#5ae05a;font-size:0.7rem;padding:6px 10px;border-radius:6px;max-width:300px;word-break:break-all;z-index:999;}
+
+/* ── MOBILE OPTIMIZATIONS ── */
+@media (max-width: 600px) {
+  /* Lobby screens */
+  .lbtn { font-size: 1rem; padding: 14px; }
+  .linput { font-size: 1rem; padding: 12px; }
+  .tcard { padding: 10px; }
+  .stile { min-height: 52px; font-size: 0.8rem; }
+  .stile .seat-lbl { font-size: 0.65rem; }
+
+  /* Score bar */
+  #score-bar { flex-wrap: wrap; gap: 3px; padding: 4px 2px; }
+  #score-bar > div { padding: 4px 6px; font-size: 0.65rem; min-width: 0; flex: 1 1 auto; }
+  #score-bar .sbar-label { font-size: 0.55rem; }
+  #score-bar .sbar-val { font-size: 0.9rem; }
+  #new-game-btn, #rules-btn { padding: 6px 10px; font-size: 0.75rem; }
+
+  /* Message bar */
+  #msg-bar { font-size: 0.9rem; padding: 8px 12px; }
+
+  /* Cards - bigger touch targets */
+  .card { min-width: 44px; min-height: 60px; font-size: 0.85rem; border-radius: 7px; }
+  .card .cr { font-size: 1rem; }
+  .card .cb { font-size: 0.75rem; }
+  .playable { box-shadow: 0 0 0 3px #f0cc70, 0 0 14px 4px rgba(240,204,112,0.6); transform: translateY(-4px); }
+
+  /* Player zones - more compact */
+  .pzone { gap: 4px; }
+  .pzone-row { gap: 4px; }
+
+  /* Center info */
+  .player-label { font-size: 0.7rem; padding: 2px 6px; }
+  .name-badge { font-size: 0.75rem; padding: 3px 8px; }
+
+  /* Action panel */
+  #action-panel { padding: 14px 10px; }
+  #action-panel h2 { font-size: 1.1rem; }
+  #action-panel p { font-size: 0.85rem; }
+  .mbtn { font-size: 0.8rem; padding: 10px 8px; min-width: 44px; }
+  .btn-row { gap: 6px; flex-wrap: wrap; justify-content: center; }
+}
+
+@media (max-width: 400px) {
+  .card { min-width: 38px; min-height: 52px; font-size: 0.75rem; }
+  #msg-bar { font-size: 0.8rem; }
+}
 </style>
 </head>
 <body>
@@ -446,7 +492,6 @@ body {
 </div>
 
 <div id="overlay"><div id="modal-box"></div></div>
-<div id="debug"></div>
 
 <script>
 const TBLS=[
@@ -458,11 +503,7 @@ const SEATS=['south','west','north','east'];
 const SLBL={south:'South',north:'North',west:'West',east:'East'};
 let myName='';
 
-function dbg(msg){
-  const el=document.getElementById('debug');
-  if(el){el.style.display='block';el.textContent=msg;}
-  console.log('[TGIS]',msg);
-}
+function dbg(msg){ console.log('[TGIS]',msg); }
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
