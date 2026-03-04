@@ -1615,8 +1615,10 @@ async function processAI(ng){
     return; // human's turn
   }
   if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]){
+    dbg('AI playing: '+ng.current);
     await sleep(800);doAIPlayOnState(ng,ng.current);await pushG(ng);processAI(ng);return;
   }
+  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' inSeats='+(ng.current&&!!roomSeats[ng.current]));
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
