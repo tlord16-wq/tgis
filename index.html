@@ -1645,9 +1645,19 @@ async function processAI(ng){
   if(ng.phase==='discard'&&ng.dealer&&roomSeats[ng.dealer])return;
   if(ng.phase==='gameover'){showGameOver(ng);return;}
   if(ng.phase==='resolving'){
-    await sleep(1400);applyResolveTrick(ng);
-    if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
-    await pushG(ng);processAI(ng);return;
+    try {
+      // Normalize Firebase-stripped objects
+      if(!ng.trick)ng.trick={};
+      if(!ng.hands)ng.hands={};
+      if(!ng.myst)ng.myst={};
+      if(!ng.mystUsed)ng.mystUsed={};
+      if(!ng.mystBrokeTrump)ng.mystBrokeTrump={};
+      ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
+      await sleep(1400);applyResolveTrick(ng);
+      dbg('Resolved trick, new phase='+ng.phase+' trickCount='+ng.trickCount);
+      if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
+      await pushG(ng);processAI(ng);return;
+    } catch(e){ dbg('RESOLVE ERROR: '+e.message); return; }
   }
   if(ng.phase==='bid'){
     const b=ng.bidOrder?.[ng.bidIdx];
