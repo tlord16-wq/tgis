@@ -1553,7 +1553,7 @@ function subscribeRoom(){
 async function startGameListener(){
   const seatsSnap=await get(ref(db,'rooms/'+myTable+'/seats'));
   if(seatsSnap.exists()){roomSeats=seatsSnap.val();buildNameMap(roomSeats);}
-  dbg('Game started. isHost='+isHost+' seats='+JSON.stringify(Object.keys(roomSeats)));
+  dbg('Game started. isHost='+isHost+' mySeat='+mySeat+' seats='+JSON.stringify(Object.keys(roomSeats)));
   onValue(ref(db,'rooms/'+myTable+'/gameState'),snap=>{
     if(!snap.exists())return;
     const prev=G.seq;
