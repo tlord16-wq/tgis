@@ -1590,6 +1590,17 @@ async function startGameListener(){
     if(G.hands) ALL_P.forEach(p=>{if(G.hands[p]&&!Array.isArray(G.hands[p]))G.hands[p]=Object.values(G.hands[p]).filter(Boolean);});
     renderAll_ext();
     if(isHost)processAI(JSON.parse(JSON.stringify(G)));
+    // Fallback: if resolving phase and we're not host, wait 3s then resolve ourselves
+    else if(G.phase==='resolving'){
+      const seq=G.seq;
+      setTimeout(async()=>{
+        if(G.seq===seq&&G.phase==='resolving'){
+          dbg('Fallback resolve triggered');
+          isHost=true;
+          processAI(JSON.parse(JSON.stringify(G)));
+        }
+      },3000);
+    }
   });
   onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
     if(snap.exists()){roomSeats=snap.val();buildNameMap(roomSeats);}
@@ -1627,7 +1638,11 @@ async function processAI(ng){
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
-async function act(ng){await pushG(ng);if(isHost)processAI(JSON.parse(JSON.stringify(ng)));}
+async function act(ng){
+  await pushG(ng);
+  // Any player can drive processAI if they're the host OR if resolving phase
+  if(isHost) processAI(JSON.parse(JSON.stringify(ng)));
+}
 
 let lastSeq=-1;
 function renderAll_ext(){
@@ -1689,6 +1704,8 @@ window._humanPlayCard =i=>{
   dbg('humanPlayCard i='+i+' mySeat='+mySeat+' current='+G.current);
   try {
     const ng=JSON.parse(JSON.stringify(G));
+    // Normalize hands
+    if(ng.hands) ALL_P.forEach(p=>{if(ng.hands[p]&&!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
     applyPlayCard(ng,mySeat,i,false);
     dbg('applyPlayCard done, phase='+ng.phase+' seq='+ng.seq);
     act(ng);
