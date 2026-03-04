@@ -1133,7 +1133,7 @@ function applyEndHand(ng) {
   }
   ng.scores[0] += pts[0];
   ng.scores[1] += pts[1];
-  ng.lastHandResult = { tricks, pts, mt, loner: ng.loner };
+  ng.lastHandResult = { tricks, pts, mt, loner: ng.loner||null };
   if (ng.scores[0] >= 10 || ng.scores[1] >= 10) {
     ng.phase = 'gameover';
   } else {
@@ -1452,7 +1452,12 @@ function showMyBidUI() {
       scores:[0,0],dealer,seq:0};
   }
 
-  async function pushG(ng){ng.seq=(ng.seq||0)+1;await set(ref(db,'rooms/'+myTable+'/gameState'),ng);}
+  async function pushG(ng){
+  ng.seq=(ng.seq||0)+1;
+  // Sanitize: Firebase rejects undefined values
+  const clean = JSON.parse(JSON.stringify(ng, (k,v)=>v===undefined?null:v));
+  await set(ref(db,'rooms/'+myTable+'/gameState'),clean);
+}
   function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
   
