@@ -1028,6 +1028,7 @@ function applyPlayCard(ng, seat, cardIdx, isMystery) {
     ng.hands[seat].splice(cardIdx, 1);
   }
   if (!ng.ledSuit) ng.ledSuit = effSuit(card, ng.trump);
+  if (!ng.trick) ng.trick = {};
   ng.trick[seat] = { card, isMystery };
 
   const order = playOrder(ng);
@@ -1441,7 +1442,7 @@ function showMyBidUI() {
     return{trump:null,maker:null,makerTeam:null,hands,myst,
       mystUsed:{south:false,west:false,north:false,east:false},
       mystBrokeTrump:{south:false,west:false,north:false,east:false},
-      trick:{south:null,west:null,north:null,east:null},
+      trick:{},
       trickWins:[0,0],trickCount:0,ledSuit:null,leader:null,current:null,
       phase:'bid',upcard:kitty[0],kitty,bidRound:1,bidIdx:0,
       bidOrder:[ALL_P[1],ALL_P[2],ALL_P[3],ALL_P[0]],
