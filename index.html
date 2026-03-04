@@ -408,6 +408,12 @@ body {
    <input id="inp-name" class="linput" placeholder="Your name" maxlength="12">
    <button class="lbtn lbtn-gold" id="cont-btn">Continue →</button>
    <div id="name-err" class="lerr"></div>
+   <div id="rejoin-box" style="display:none;margin-top:14px;padding:12px;background:rgba(0,0,0,0.3);border:1px solid #7a5e22;border-radius:10px;">
+    <div style="color:#c9a84c;font-size:0.85rem;font-family:'Crimson Text',serif;margin-bottom:8px;">↩ Previous session found:</div>
+    <div id="rejoin-info" style="color:#f0cc70;font-family:'Playfair Display',serif;font-size:0.95rem;margin-bottom:10px;"></div>
+    <button class="lbtn lbtn-gold" id="rejoin-btn" style="margin-bottom:4px;">↩ Rejoin Game</button>
+    <button class="lbtn lbtn-dim" id="rejoin-clear" style="font-size:0.8rem;padding:6px;">Start Fresh</button>
+   </div>
   </div>
   <div id="scr-tables" class="scr">
    <div style="color:#c9a84c;margin-bottom:14px;font-family:'Crimson Text',serif;font-size:0.95rem;">
@@ -481,6 +487,28 @@ document.getElementById('leave-btn').onclick=function(){if(window.fbLeaveSeat)wi
 
 // Pre-fill saved name
 try{const s=sessionStorage.getItem('tgis_name');if(s)document.getElementById('inp-name').value=s;}catch(e){}
+
+// Check for rejoin session
+try {
+  const sess = JSON.parse(localStorage.getItem('tgis_session')||'null');
+  if (sess && sess.name && sess.tableId && sess.seat) {
+    const TNAMES = {founders:'♠ Founders', open:'♠ Open Table', lordsarcade:"♠ Lord's Arcade"};
+    document.getElementById('rejoin-info').textContent =
+      sess.name + ' · ' + (TNAMES[sess.tableId]||sess.tableId) + ' · ' + (sess.seat.charAt(0).toUpperCase()+sess.seat.slice(1));
+    document.getElementById('rejoin-box').style.display = 'block';
+    document.getElementById('inp-name').value = sess.name;
+    document.getElementById('rejoin-btn').onclick = function() {
+      myName = sess.name;
+      window._myName = sess.name;
+      if (window.fbClaimSeat) window.fbClaimSeat(sess.tableId, sess.seat, sess.name);
+      else { showScr('tables'); renderTablesSkeleton(); if(window.fbLoadTables) window.fbLoadTables(); }
+    };
+    document.getElementById('rejoin-clear').onclick = function() {
+      localStorage.removeItem('tgis_session');
+      document.getElementById('rejoin-box').style.display = 'none';
+    };
+  }
+} catch(e) {}
 
 function renderTablesSkeleton(){
   const el=document.getElementById('tables-list');
@@ -1458,6 +1486,8 @@ window.fbClaimSeat=async function(tableId,seat,name){
       await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:playerId,name,human:true});
       if(!d.host)await update(roomRef,{host:playerId});
     }
+    // Save session for rejoin
+    try { localStorage.setItem('tgis_session', JSON.stringify({name, tableId, seat, playerId})); } catch(e) {}
     dbg('Seat claimed! Loading room…');
     const snap2=await get(roomRef);
     roomSeats=snap2.val()?.seats||{};
@@ -1477,6 +1507,7 @@ window.fbLeaveSeat=async function(){
     if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
   }
   mySeat=null;myTable=null;isHost=false;roomRef=null;
+  try { localStorage.removeItem('tgis_session'); } catch(e) {}
   showScr('tables');
   window.fbLoadTables();
 };
