@@ -1528,7 +1528,7 @@ async function startGameListener(){
     const prev=G.seq;
     G=snap.val();
     renderAll_ext();
-    if(isHost&&G.seq!==prev)processAI(JSON.parse(JSON.stringify(G)));
+    if(isHost)processAI(JSON.parse(JSON.stringify(G)));
   });
   onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
     if(snap.exists()){roomSeats=snap.val();buildNameMap(roomSeats);}
@@ -1537,6 +1537,11 @@ async function startGameListener(){
 
 async function processAI(ng){
   if(!isHost)return;
+  // Don't process if it's a human's turn
+  if(ng.phase==='bid'&&ng.bidOrder&&roomSeats[ng.bidOrder[ng.bidIdx]])return;
+  if(ng.phase==='play'&&ng.current&&roomSeats[ng.current])return;
+  if(ng.phase==='discard'&&ng.dealer&&roomSeats[ng.dealer])return;
+  if(ng.phase==='gameover'){showGameOver(ng);return;}
   if(ng.phase==='resolving'){
     await sleep(1400);applyResolveTrick(ng);
     if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
