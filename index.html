@@ -746,6 +746,8 @@ function renderPlayerHand(seat) {
   zone.innerHTML = '';
 
   if (!G.hands || !G.hands[seat]) return;
+  // Firebase may convert arrays to objects - normalize
+  if (!Array.isArray(G.hands[seat])) G.hands[seat] = Object.values(G.hands[seat]).filter(Boolean);
 
   if (G.sittingOut === seat) {
     zone.style.opacity = '0.35'; zone.style.filter = 'grayscale(1)';
@@ -1584,6 +1586,8 @@ async function startGameListener(){
     if(!snap.exists())return;
     const prev=G.seq;
     G=snap.val();
+    // Normalize hands arrays (Firebase converts sparse arrays to objects)
+    if(G.hands) ALL_P.forEach(p=>{if(G.hands[p]&&!Array.isArray(G.hands[p]))G.hands[p]=Object.values(G.hands[p]).filter(Boolean);});
     renderAll_ext();
     if(isHost)processAI(JSON.parse(JSON.stringify(G)));
   });
