@@ -1586,8 +1586,16 @@ async function startGameListener(){
     if(!snap.exists())return;
     const prev=G.seq;
     G=snap.val();
-    // Normalize hands arrays (Firebase converts sparse arrays to objects)
-    if(G.hands) ALL_P.forEach(p=>{if(G.hands[p]&&!Array.isArray(G.hands[p]))G.hands[p]=Object.values(G.hands[p]).filter(Boolean);});
+    // Normalize objects that Firebase may strip or convert
+    if(!G.trick) G.trick={};
+    if(!G.hands) G.hands={};
+    if(!G.myst) G.myst={};
+    if(!G.mystUsed) G.mystUsed={};
+    if(!G.mystBrokeTrump) G.mystBrokeTrump={};
+    ALL_P.forEach(p=>{
+      if(!G.hands[p]) G.hands[p]=[];
+      else if(!Array.isArray(G.hands[p])) G.hands[p]=Object.values(G.hands[p]).filter(Boolean);
+    });
     renderAll_ext();
     if(isHost)processAI(JSON.parse(JSON.stringify(G)));
     // Fallback: if resolving phase and we're not host, wait 3s then resolve ourselves
@@ -1704,8 +1712,16 @@ window._humanPlayCard =i=>{
   dbg('humanPlayCard i='+i+' mySeat='+mySeat+' current='+G.current);
   try {
     const ng=JSON.parse(JSON.stringify(G));
-    // Normalize hands
-    if(ng.hands) ALL_P.forEach(p=>{if(ng.hands[p]&&!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
+    // Normalize all potentially missing objects
+    if(!ng.trick) ng.trick={};
+    if(!ng.hands) ng.hands={};
+    if(!ng.myst) ng.myst={};
+    if(!ng.mystUsed) ng.mystUsed={};
+    if(!ng.mystBrokeTrump) ng.mystBrokeTrump={};
+    ALL_P.forEach(p=>{
+      if(!ng.hands[p]) ng.hands[p]=[];
+      else if(!Array.isArray(ng.hands[p])) ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);
+    });
     applyPlayCard(ng,mySeat,i,false);
     dbg('applyPlayCard done, phase='+ng.phase+' seq='+ng.seq);
     act(ng);
