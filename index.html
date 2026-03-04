@@ -764,7 +764,7 @@ function renderPlayerHand(seat) {
   if (!G.mystUsed[seat] && G.myst[seat]) {
     const isMystTurn = G.phase === 'play' && G.current === seat && !G.mystUsed[seat] && G.myst[seat];
     const canM = isMe && isMystTurn;
-    const mEl = makeCardEl(null, { back:true, mystery:true, playable:canM, onClick: canM ? ()=>humanPlayMystery() : null });
+    const mEl = makeCardEl(null, { back:true, mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null });
     const holder = document.createElement('div');
     holder.className = 'mystery-holder'; holder.appendChild(mEl);
     const mlbl = document.createElement('div');
@@ -1711,7 +1711,13 @@ window._humanPlayCard =i=>{
     act(ng);
   } catch(e) { dbg('PLAY ERROR: '+e.message); }
 };
-window._humanPlayMystery=()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
+window._humanPlayMystery=()=>{
+  try {
+    const ng=JSON.parse(JSON.stringify(G));
+    if(ng.hands) ALL_P.forEach(p=>{if(ng.hands[p]&&!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
+    applyPlayCard(ng,mySeat,-1,true);act(ng);
+  } catch(e){dbg('MYSTERY ERROR: '+e.message);}
+};
 window.closeModal=closeModal;
 window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();};
 window.humanStuckName=s=>window._hSN&&window._hSN(s);
