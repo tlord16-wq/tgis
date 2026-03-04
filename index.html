@@ -1605,9 +1605,31 @@ async function startGameListener(){
         if(G.seq===seq&&G.phase==='resolving'){
           dbg('Fallback resolve triggered');
           isHost=true;
-          processAI(JSON.parse(JSON.stringify(G)));
+          const ng=JSON.parse(JSON.stringify(G));
+          if(!ng.trick)ng.trick={};
+          if(!ng.hands)ng.hands={};
+          ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
+          applyResolveTrick(ng);
+          if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);}
+          else{await pushG(ng);processAI(ng);}
         }
-      },3000);
+      },2000);
+      setTimeout(async()=>{
+        if(G.phase==='resolving'){
+          dbg('Hard fallback: resolving trick directly');
+          isHost=true;
+          const ng=JSON.parse(JSON.stringify(G));
+          if(!ng.trick)ng.trick={};
+          if(!ng.hands)ng.hands={};
+          if(!ng.myst)ng.myst={};
+          if(!ng.mystUsed)ng.mystUsed={};
+          if(!ng.mystBrokeTrump)ng.mystBrokeTrump={};
+          ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
+          applyResolveTrick(ng);
+          if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);}
+          else{ng.seq=(ng.seq||0)+1;await pushG(ng);processAI(ng);}
+        }
+      },4000);
     }
   });
   onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
