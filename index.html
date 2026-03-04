@@ -1680,7 +1680,12 @@ window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));apply
 window._hTK =()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
 window._humanPlayCard =i=>{
   dbg('humanPlayCard i='+i+' mySeat='+mySeat+' current='+G.current);
-  const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,i,false);act(ng);
+  try {
+    const ng=JSON.parse(JSON.stringify(G));
+    applyPlayCard(ng,mySeat,i,false);
+    dbg('applyPlayCard done, phase='+ng.phase+' seq='+ng.seq);
+    act(ng);
+  } catch(e) { dbg('PLAY ERROR: '+e.message); }
 };
 window._humanPlayMystery=()=>{const ng=JSON.parse(JSON.stringify(G));applyPlayCard(ng,mySeat,-1,true);act(ng);};
 window.closeModal=closeModal;
