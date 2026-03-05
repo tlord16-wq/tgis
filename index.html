@@ -2594,18 +2594,7 @@ window._hD  =i=>{
   closeActionPanel();
   const ng=JSON.parse(JSON.stringify(G));
   const hand=ng.hands[mySeat];
-  // If dealer discards their own mystery card, the received trump upcard becomes new mystery
-  const discardingMystery = ng.myst[mySeat] && hand[i] &&
-    hand[i].r===ng.myst[mySeat].r && hand[i].s===ng.myst[mySeat].s;
   hand.splice(i,1);
-  if(discardingMystery){
-    // upcard is still in hand — remove it since it's becoming the mystery
-    const upcardIdx=hand.findIndex(c=>c&&c.r===ng.upcard.r&&c.s===ng.upcard.s);
-    if(upcardIdx!==-1) hand.splice(upcardIdx,1);
-    ng.myst[mySeat]=ng.upcard;
-    if(!ng.mystRevealed)ng.mystRevealed={};
-    ng.mystRevealed[mySeat]=true;
-  }
   applyStartPlay(ng);act(ng);
 };
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
