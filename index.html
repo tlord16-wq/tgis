@@ -2333,8 +2333,10 @@ async function startGameListener(){
   dbg('Game started. isHost='+isHost+' mySeat='+mySeat+' seats='+JSON.stringify(Object.keys(roomSeats)));
   onValue(ref(db,'rooms/'+myTable+'/gameState'),snap=>{
     if(!snap.exists())return;
-    const prev=G.seq;
-    G=snap.val();
+    const newState=snap.val();
+    const prevSeq=G.seq||0;
+    const newSeq=newState.seq||0;
+    G=newState;
     // Normalize objects that Firebase may strip or convert
     if(!G.trick) G.trick={};
     if(!G.hands) G.hands={};
@@ -2346,9 +2348,12 @@ async function startGameListener(){
       else if(!Array.isArray(G.hands[p])) G.hands[p]=Object.values(G.hands[p]).filter(Boolean);
     });
     renderAll_ext();
-    if(isHost)processAI(JSON.parse(JSON.stringify(G)));
+    // Only drive processAI when seq actually advances (not on every echo)
+    if(isHost && newSeq > prevSeq){
+      processAI(JSON.parse(JSON.stringify(G)));
+    }
     // Fallback: if resolving phase and we're not host, wait 3s then resolve ourselves
-    else if(G.phase==='resolving'){
+    else if(!isHost && G.phase==='resolving'){
       const seq=G.seq;
       setTimeout(async()=>{
         if(G.seq===seq&&G.phase==='resolving'){
@@ -2362,23 +2367,7 @@ async function startGameListener(){
           if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);}
           else{await pushG(ng);processAI(ng);}
         }
-      },2000);
-      setTimeout(async()=>{
-        if(G.phase==='resolving'){
-          dbg('Hard fallback: resolving trick directly');
-          isHost=true;
-          const ng=JSON.parse(JSON.stringify(G));
-          if(!ng.trick)ng.trick={};
-          if(!ng.hands)ng.hands={};
-          if(!ng.myst)ng.myst={};
-          if(!ng.mystUsed)ng.mystUsed={};
-          if(!ng.mystBrokeTrump)ng.mystBrokeTrump={};
-          ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
-          applyResolveTrick(ng);
-          if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);}
-          else{ng.seq=(ng.seq||0)+1;await pushG(ng);processAI(ng);}
-        }
-      },4000);
+      },3000);
     }
   });
   onValue(ref(db,'rooms/'+myTable+'/seats'),snap=>{
@@ -2459,8 +2448,7 @@ async function processAI(ng){
 
 async function act(ng){
   await pushG(ng);
-  // Any player can drive processAI if they're the host OR if resolving phase
-  if(isHost) processAI(JSON.parse(JSON.stringify(ng)));
+  // Firebase listener will call processAI when the new seq arrives
 }
 
 let lastSeq=-1;
