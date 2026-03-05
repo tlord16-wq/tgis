@@ -363,6 +363,7 @@ body {
 </style>
 </head>
 <body>
+<div id="game-wrapper" style="width:100%;overflow:hidden;display:flex;justify-content:center;">
 <div id="game-scaler">
 <div class="game-header">
   <div class="game-title">THIS GAME IS STUPID</div>
@@ -433,6 +434,7 @@ body {
   </div>
 </div>
 </div><!-- game-scaler -->
+</div><!-- game-wrapper -->
 
 <div id="lobby">
  <div id="lbox">
@@ -697,9 +699,7 @@ function scaleGame(){
     sc.style.transform='scale('+s+')';
     sc.style.width=gw+'px';
     sc.style.transformOrigin='top center';
-    sc.style.marginLeft='-'+((gw-vw)/2)+'px';
-    const scaledH=sc.getBoundingClientRect().height;
-    sc.style.marginBottom='-'+(scaledH/s*(1-s))+'px';
+    sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';
   } else {
     sc.style.transform=sc.style.width=sc.style.marginBottom=sc.style.marginLeft='';
   }
