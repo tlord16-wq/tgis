@@ -1497,6 +1497,7 @@ try {
   });
   db = getDatabase(app);
 } catch(e) {
+  console.error("[TGIS] Firebase init failed:", e);
 }
 
 const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
@@ -2205,7 +2206,7 @@ function showMyBidUI() {
   
 // ── LOBBY ──
 window.fbLoadTables=function(){
-  if(!db){return;}
+  if(!db){console.error("[TGIS] fbLoadTables: db is null");return;}
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
   tablesListener=onValue(ref(db,'rooms'),snap=>{
     const all=snap.val()||{};
@@ -2219,7 +2220,7 @@ window.stopTableListener=function(){
 
 window.fbClearTable=async function(tableId){
   if(!db)return;
-  try{await remove(ref(db,'rooms/'+tableId));;}
+  try{await remove(ref(db,'rooms/'+tableId));}
   catch(e){}
 };
 
