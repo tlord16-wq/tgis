@@ -2017,10 +2017,11 @@ async function startGameListener(){
 
 async function processAI(ng){
   if(!isHost)return;
+  const isHuman = seat => roomSeats[seat]&&roomSeats[seat].human===true;
   // Don't process if it's a human's turn
-  if(ng.phase==='bid'&&ng.bidOrder&&roomSeats[ng.bidOrder[ng.bidIdx]])return;
-  if(ng.phase==='play'&&ng.current&&roomSeats[ng.current])return;
-  if(ng.phase==='discard'&&ng.dealer&&roomSeats[ng.dealer])return;
+  if(ng.phase==='bid'&&ng.bidOrder&&isHuman(ng.bidOrder[ng.bidIdx]))return;
+  if(ng.phase==='play'&&ng.current&&isHuman(ng.current))return;
+  if(ng.phase==='discard'&&ng.dealer&&isHuman(ng.dealer))return;
   if(ng.phase==='gameover'){showGameOver(ng);return;}
   if(ng.phase==='resolving'){
     try {
@@ -2045,14 +2046,14 @@ async function processAI(ng){
       else{const forced=SUITS.find(s=>s!==ng.upcard.s);applyNameTrump(ng,ng.dealer,forced);}
       await pushG(ng);processAI(ng);return;
     }
-    if(!roomSeats[b]){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
+    if(!isHuman(b)){await sleep(650);doAIBidOnState(ng,b);await pushG(ng);processAI(ng);return;}
     return; // human's turn
   }
-  if(ng.phase==='play'&&ng.current&&!roomSeats[ng.current]){
+  if(ng.phase==='play'&&ng.current&&!isHuman(ng.current)){
     dbg('AI playing: '+ng.current);
     await sleep(800);doAIPlayOnState(ng,ng.current);await pushG(ng);processAI(ng);return;
   }
-  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' inSeats='+(ng.current&&!!roomSeats[ng.current]));
+  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' isHuman='+(ng.current&&isHuman(ng.current)));
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
