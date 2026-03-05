@@ -140,7 +140,7 @@ body.desktop-mode {
 .btn-new:hover { transform: scale(1.05); }
 .btn-help { font-family: 'Crimson Text', serif; font-size: 0.78rem; background: rgba(0,0,0,0.5); color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: all 0.15s; }
 #msg-bar { width: 960px; margin-top: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(201,168,76,0.25); border-radius: 20px; padding: 5px 18px; font-family: 'Crimson Text', serif; font-style: italic; font-size: 1.85rem; color: var(--cream); text-align: center; min-height: 36px; transition: all 0.3s; }
-#action-panel { position: relative; width: 960px; background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%); border: 2px solid var(--gold); border-radius: 14px; padding: 16px 28px; box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 20px rgba(201,168,76,0.15); z-index: 10; display: none; margin-top: 8px; }
+#action-panel { position: relative; width: 960px; margin-left: auto; margin-right: auto; background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%); border: 2px solid var(--gold); border-radius: 14px; padding: 16px 28px; box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 20px rgba(201,168,76,0.15); z-index: 10; display: none; margin-top: 8px; }
 #action-panel.open { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
 #action-panel h2 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 1.3rem; margin-bottom: 10px; letter-spacing: 1px; }
 #action-panel p { font-family: 'Crimson Text', serif; font-size: 1.05rem; line-height: 1.5; margin-bottom: 6px; color: var(--cream); }
@@ -954,7 +954,6 @@ body.desktop-mode {
   <div class="active-indicator" id="ind-east"  style="display:none"></div>
   <div id="winner-flash">—</div>
 </div>
-<div id="action-panel"></div>
 
 <div id="help-panel">
   <div class="help-cols">
