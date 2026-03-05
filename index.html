@@ -327,77 +327,146 @@ body {
 .pdot.ai{background:rgba(201,168,76,0.4);}
 #debug{position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:#5ae05a;font-size:0.7rem;padding:6px 10px;border-radius:6px;max-width:300px;word-break:break-all;z-index:999;}
 
-/* ── MOBILE OPTIMIZATIONS ── */
-@media (max-width: 600px) {
-  body { overflow-x: hidden; }
-
-  /* Lobby screens */
-  .lbtn { font-size: 1.05rem; padding: 15px; }
-  .linput { font-size: 1.05rem; padding: 13px; }
-  .tcard { padding: 10px; }
-  .stile { min-height: 56px; font-size: 0.85rem; }
-  .stile .seat-lbl { font-size: 0.68rem; }
-
-  /* Score/bottom bar - BIGGER on mobile */
-  #score-bar { flex-wrap: wrap; gap: 2px; padding: 5px 3px; }
-  #score-bar > div { padding: 5px 4px; font-size: 0.72rem; min-width: 0; flex: 1 1 auto; }
-  #score-bar .sbar-label { font-size: 0.58rem; letter-spacing: 0.05em; }
-  #score-bar .sbar-val { font-size: 1rem; font-weight: 700; }
-  #new-game-btn { padding: 8px 10px; font-size: 0.8rem; }
-  #rules-btn { padding: 8px 10px; font-size: 0.8rem; }
-
-  /* Message bar - MUCH bigger */
-  #msg-bar { font-size: 1.25rem !important; padding: 10px 14px; letter-spacing: 0.01em; }
-
-  /* Action panel - larger for touch */
-  #action-panel { padding: 16px 12px; }
-  #action-panel h2 { font-size: 1.2rem; }
-  #action-panel p { font-size: 0.9rem; }
-  .mbtn { font-size: 0.85rem; padding: 12px 10px; min-width: 48px; min-height: 48px; }
-  .btn-row { gap: 8px; flex-wrap: wrap; justify-content: center; }
-}
-
-@media (max-width: 400px) {
-  #msg-bar { font-size: 0.95rem !important; }
-  #score-bar .sbar-val { font-size: 0.9rem; }
-}
-
+/* ── MOBILE LAYOUT (≤700px) ── */
 @media (max-width: 700px) {
-  html, body { height: 100%; overflow: hidden; }
-  #game-wrapper { overflow: hidden; }
-
-  /* Info strip and msg bar - now outside scaler, full width at bottom */
-  #info-strip {
-    width: 100% !important; margin: 0 !important;
-    padding: 3px 2px; gap: 2px;
-    background: rgba(10,30,16,0.97);
-    border-top: 1px solid rgba(201,168,76,0.35);
-    flex-wrap: nowrap;
-  }
-  .info-pill { padding: 3px 4px !important; font-size: 0.6rem !important; flex: 1 1 0; min-width: 0; }
-  .info-pill .pill-label { font-size: 0.48rem !important; }
-  .info-pill .pill-val { font-size: 0.85rem !important; }
-  .btn-new, .btn-help { padding: 4px 7px !important; font-size: 0.65rem !important; }
-
-  #msg-bar {
-    width: 100% !important; margin: 0 !important; border-radius: 0 !important;
-    font-size: 1.05rem !important; padding: 7px 12px !important;
-    background: rgba(0,0,0,0.88) !important;
-    border-left: none !important; border-right: none !important; border-bottom: none !important;
-    border-top: 1px solid rgba(201,168,76,0.25) !important;
+  html, body {
+    height: 100%; height: 100dvh;
+    overflow: hidden;
+    margin: 0; padding: 0;
   }
 
-  /* Action panel on mobile - slides up from bottom */
+  /* Hide desktop scaler entirely on mobile */
+  #game-scaler { display: none !important; }
+
+  /* Full-screen mobile board */
+  #mobile-board {
+    display: flex !important;
+    flex-direction: column;
+    width: 100vw;
+    height: 100dvh;
+    background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mb-header {
+    text-align: center;
+    padding: 4px 0 2px;
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+  }
+
+  /* 5-row grid: north, sides+center, south, info, msg */
+  .mb-north { display: flex; justify-content: center; align-items: flex-start; padding: 4px 10px; flex-shrink: 0; gap: 6px; }
+  .mb-middle { display: flex; flex: 1; min-height: 0; align-items: center; padding: 0 4px; gap: 4px; }
+  .mb-west { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+  .mb-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; position: relative; }
+  .mb-east { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+  .mb-south { display: flex; justify-content: center; align-items: flex-end; padding: 4px 10px; flex-shrink: 0; gap: 6px; }
+
+  .mb-info {
+    display: flex; flex-shrink: 0;
+    background: rgba(0,0,0,0.7);
+    border-top: 1px solid rgba(201,168,76,0.3);
+    padding: 3px 4px; gap: 2px; align-items: center;
+  }
+  .mb-info .info-pill {
+    flex: 1; padding: 2px 3px; font-size: 0.55rem;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--gold-dim);
+    border-radius: 5px; text-align: center; min-width: 0;
+  }
+  .mb-info .pill-label { font-size: 0.45rem; display: block; }
+  .mb-info .pill-val { font-size: 0.8rem; font-weight: 700; }
+  .mb-info .btn-new, .mb-info .btn-help { padding: 4px 6px; font-size: 0.6rem; flex-shrink: 0; }
+
+  .mb-msg {
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.85);
+    border-top: 1px solid rgba(201,168,76,0.2);
+    padding: 7px 12px;
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--cream);
+    text-align: center;
+    min-height: 36px;
+  }
+
+  /* Cards on mobile */
+  .mb-card {
+    width: 52px; height: 76px; border-radius: 6px;
+    background: var(--cream);
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 3px 4px;
+    font-family: 'Playfair Display', serif; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; user-select: none; flex-shrink: 0;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .mb-card.red { color: var(--red-card); }
+  .mb-card.black { color: var(--black-card); }
+  .mb-card.back {
+    background: repeating-linear-gradient(45deg,var(--card-back-b),var(--card-back-b) 4px,var(--card-back-a) 4px,var(--card-back-a) 8px);
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+  .mb-card.mystery-back {
+    background: repeating-linear-gradient(45deg,var(--mystery-back-b),var(--mystery-back-b) 4px,var(--mystery-back-a) 4px,var(--mystery-back-a) 8px);
+  }
+  .mb-card.playable {
+    box-shadow: 0 0 0 2px #f0cc70, 0 0 10px rgba(240,204,112,0.7);
+    transform: translateY(-5px);
+  }
+  .mb-card.trump-card { box-shadow: 0 0 0 2px #e8a020, 0 0 8px rgba(232,160,32,0.5); }
+
+  .mb-mystery-label { font-size: 0.55rem; color: var(--gold-dim); margin-top: 1px; text-align: center; }
+
+  .mb-player-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.7rem; color: rgba(201,168,76,0.9);
+    background: rgba(0,0,0,0.6);
+    padding: 2px 8px; border-radius: 10px;
+    text-align: center; max-width: 90px; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  .mb-player-label.is-you { color: #f0cc70; border: 1px solid rgba(240,204,112,0.4); }
+  .mb-dealer-chip {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); color: #1a0f00;
+    font-size: 0.6rem; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Center trick display */
+  .mb-trick { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .mb-trick-row { display: flex; gap: 4px; justify-content: center; align-items: center; }
+
+  /* Action panel on mobile */
   #action-panel {
-    position: fixed !important; bottom: 0; left: 0; right: 0; z-index: 300;
-    border-radius: 16px 16px 0 0; max-height: 50vh; overflow-y: auto;
-    width: 100% !important;
+    position: fixed !important; bottom: 0; left: 0; right: 0; z-index: 500;
+    width: 100% !important; border-radius: 16px 16px 0 0;
+    max-height: 55vh; overflow-y: auto;
+    padding: 14px 12px 20px !important;
   }
+  #action-panel h2 { font-size: 1.1rem !important; }
+  #action-panel p { font-size: 0.9rem !important; }
+  .mbtn { font-size: 0.85rem !important; padding: 11px 10px !important; min-height: 44px; }
+  .btn-row { gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+  /* Info strip and msg bar - shown in mobile-board, hide desktop versions */
+  #info-strip, #msg-bar { display: none !important; }
+}
+
+@media (min-width: 701px) {
+  #mobile-board { display: none !important; }
 }
 </style>
 </head>
 <body>
-<div id="game-wrapper" style="width:100%;overflow:hidden;display:flex;justify-content:center;">
 <div id="game-scaler">
 <div class="game-header">
   <div class="game-title">THIS GAME IS STUPID</div>
@@ -451,7 +520,27 @@ body {
   </div>
 </div>
 </div><!-- game-scaler -->
-</div><!-- game-wrapper -->
+<!-- MOBILE BOARD (shown on ≤700px screens) -->
+<div id="mobile-board" style="display:none;">
+  <div class="mb-header">THIS GAME IS STUPID</div>
+  <div class="mb-north" id="mb-north"></div>
+  <div class="mb-middle">
+    <div class="mb-west" id="mb-west"></div>
+    <div class="mb-center" id="mb-center"></div>
+    <div class="mb-east" id="mb-east"></div>
+  </div>
+  <div class="mb-south" id="mb-south"></div>
+  <div class="mb-info" id="mb-info">
+    <div class="info-pill"><span class="pill-label" id="mb-score-us-label">Us</span><span class="pill-val" id="mb-score-us">0</span><span style="font-size:0.45rem">/10</span></div>
+    <div class="info-pill"><span class="pill-label" id="mb-score-them-label">Them</span><span class="pill-val" id="mb-score-them">0</span><span style="font-size:0.45rem">/10</span></div>
+    <div class="info-pill"><span class="pill-label">Trump</span><span class="pill-val" id="mb-trump">—</span></div>
+    <div class="info-pill"><span class="pill-label">Made by</span><span class="pill-val" id="mb-maker">—</span></div>
+    <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="mb-tricks">—</span></div>
+    <button class="btn-new" onclick="window.showLobby()" style="flex-shrink:0;">New</button>
+  </div>
+  <div class="mb-msg" id="mb-msg">Loading…</div>
+</div>
+
 <div id="info-strip">
   <div class="info-pill score-pill">
     <span class="pill-label" id="score-us-label">Score · South & North</span>
@@ -530,6 +619,151 @@ const SLBL={south:'South',north:'North',west:'West',east:'East'};
 let myName='';
 
 function dbg(msg){ console.log('[TGIS]',msg); }
+
+// ── MOBILE BOARD RENDERER ──
+const isMobile = () => window.innerWidth <= 700;
+
+function mbCard(card, opts={}) {
+  const el = document.createElement('div');
+  if (opts.back || opts.mystery) {
+    el.className = 'mb-card ' + (opts.mystery ? 'mystery-back' : 'back');
+  } else if (card) {
+    const isRed = card.s === 'H' || card.s === 'D';
+    el.className = 'mb-card ' + (isRed ? 'red' : 'black');
+    const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
+    el.innerHTML = `<span>${card.r}${sym[card.s]||''}</span><span style="font-size:0.6em;opacity:0.6">${opts.label||''}</span>`;
+    if (opts.isTrump) el.classList.add('trump-card');
+  }
+  if (opts.playable) {
+    el.classList.add('playable');
+    el.addEventListener('click', opts.onClick);
+  }
+  return el;
+}
+
+function mbRenderAll() {
+  if (!isMobile() || !G || !G.phase) return;
+  const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
+  const SYM = sym;
+
+  // Update info bar
+  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  setEl('mb-trump', G.trump ? sym[G.trump]+' '+G.trump : '—');
+  setEl('mb-maker', G.maker ? (NAME[G.maker]||G.maker) : '—');
+  setEl('mb-tricks', G.trickWins ? G.trickWins[0]+' — '+G.trickWins[1] : '—');
+  // Scores
+  if (G.scores) {
+    const myTeam = mySeat ? (mySeat==='south'||mySeat==='north' ? 0 : 1) : 0;
+    setEl('mb-score-us', G.scores[myTeam]);
+    setEl('mb-score-them', G.scores[1-myTeam]);
+    const usLbl = mySeat ? (mySeat==='south'||mySeat==='north' ? (NAME.south||'S')+' & '+(NAME.north||'N') : (NAME.west||'W')+' & '+(NAME.east||'E')) : 'Us';
+    setEl('mb-score-us-label', usLbl.length>10 ? 'Us' : usLbl);
+  }
+
+  // Render each player zone
+  const ZONES = {north:'mb-north', south:'mb-south', west:'mb-west', east:'mb-east'};
+  ALL_P.forEach(seat => {
+    const zone = document.getElementById(ZONES[seat]);
+    if (!zone) return;
+    zone.innerHTML = '';
+    const hand = G.hands && G.hands[seat] ? G.hands[seat] : [];
+    const isMe = seat === mySeat;
+    const isTurn = G.phase==='play' && G.current===seat;
+    const isDealer = seat === G.dealer;
+
+    // Name label
+    const lbl = document.createElement('div');
+    lbl.className = 'mb-player-label' + (isMe?' is-you':'');
+    lbl.textContent = (NAME[seat]||seat) + (isMe?' (You)':'') + (isDealer?' D':'');
+    zone.appendChild(lbl);
+
+    // Cards row
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;justify-content:center;';
+
+    // Mystery card
+    if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
+      const canM = isMe && isTurn && !G.mystUsed?.[seat];
+      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
+      const mWrap = document.createElement('div');
+      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
+      mWrap.appendChild(mEl);
+      const mLbl = document.createElement('div'); mLbl.className='mb-mystery-label'; mLbl.textContent='✦ mystery';
+      mWrap.appendChild(mLbl);
+      row.appendChild(mWrap);
+    }
+
+    // Hand cards
+    hand.forEach((card, i) => {
+      if (!card) return;
+      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
+      const isTrump = G.trump && (card.s===G.trump || (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump])));
+      const el = mbCard(card, {
+        isTrump,
+        label: isMe ? (i<2?'open':'secret') : '',
+        playable: canPlay,
+        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
+      });
+      if (!isMe) el.className = el.className.replace('red','').replace('black','') + ' back';
+      row.appendChild(el);
+    });
+
+    zone.appendChild(row);
+  });
+
+  // Center: upcard / trick
+  const center = document.getElementById('mb-center');
+  if (!center) return;
+  center.innerHTML = '';
+
+  if (G.phase === 'bid' || G.phase === 'discard') {
+    // Show upcard
+    if (G.upcard) {
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:0.65rem;color:var(--gold-dim);margin-bottom:3px;';
+      lbl.textContent = 'Upcard';
+      center.appendChild(lbl);
+      center.appendChild(mbCard(G.upcard, {}));
+    }
+  } else if (G.phase === 'play' || G.phase === 'resolving') {
+    // Show trick
+    const trick = G.trick || {};
+    const north = trick.north, south = trick.south, west = trick.west, east = trick.east;
+    // N
+    if (north) { const r=document.createElement('div');r.style.cssText='display:flex;justify-content:center;margin-bottom:3px;';r.appendChild(mbCard(north.card,{}));center.appendChild(r); }
+    // W + E row
+    const midRow = document.createElement('div');
+    midRow.style.cssText = 'display:flex;gap:30px;align-items:center;justify-content:center;';
+    if (west) midRow.appendChild(mbCard(west.card,{}));
+    // dealer chip
+    const chip = document.createElement('div'); chip.className='mb-dealer-chip'; chip.textContent='D'; chip.style.opacity='0.6';
+    midRow.appendChild(chip);
+    if (east) midRow.appendChild(mbCard(east.card,{}));
+    center.appendChild(midRow);
+    // S
+    if (south) { const r=document.createElement('div');r.style.cssText='display:flex;justify-content:center;margin-top:3px;';r.appendChild(mbCard(south.card,{}));center.appendChild(r); }
+  }
+}
+
+// Hook into setMsg to also update mobile msg bar
+const _origSetMsg = window.setMsg;
+function setMsg(t) {
+  const el = document.getElementById('msg-bar'); if(el) el.textContent = t;
+  const mel = document.getElementById('mb-msg'); if(mel) mel.textContent = t;
+}
+
+// Show/hide mobile board
+function updateMobileVisibility() {
+  const mb = document.getElementById('mobile-board');
+  const gs = document.getElementById('game-scaler');
+  const lobby = document.getElementById('lobby');
+  if (!mb) return;
+  const onMobile = isMobile();
+  const inGame = lobby && lobby.style.display === 'none';
+  mb.style.display = (onMobile && inGame) ? 'flex' : 'none';
+  if (gs) gs.style.display = (onMobile && inGame) ? 'none' : '';
+}
+window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); mbRenderAll(); });
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
@@ -709,8 +943,8 @@ function updateSeatedList(data){
 }
 
 // Game helpers
-function hideLobby(){document.getElementById('lobby').style.display='none';}
-function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name');}
+function hideLobby(){document.getElementById('lobby').style.display='none'; updateMobileVisibility(); }
+function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name'); updateMobileVisibility(); }
 function toggleHelp(){document.getElementById('help-panel').classList.toggle('open');}
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
 function openModal(html){document.getElementById('modal-box').innerHTML=html;document.getElementById('overlay').classList.add('open');}
@@ -728,30 +962,18 @@ function humanStuckName(s){if(window._hSN)window._hSN(s);}
 function humanTradeKittyAction(){if(window._hTK)window._hTK();}
 function scaleGame(){
   const sc=document.getElementById('game-scaler');if(!sc)return;
-  const gw=980,gh=900;
-  const vw=window.innerWidth,vh=window.innerHeight;
-  if(vw<700){
-    // Mobile: leave room for info-strip (~36px) and msg-bar (~42px) below
-    const reserved=82;
-    const availH=vh-reserved;
-    const sw=vw/gw, sh=availH/gh;
-    const s=Math.min(sw,sh);
-    sc.style.transform='scale('+s+')';
-    sc.style.width=gw+'px';
-    sc.style.height=gh+'px';
-    sc.style.transformOrigin='top center';
-    sc.style.marginBottom='-'+(gh*(1-s))+'px';
-    sc.style.marginLeft=((vw-gw*s)/2)+'px';
-  } else if(vw<gw){
+  // On mobile, CSS handles layout - no JS scaling needed
+  if(window.innerWidth<=700){sc.style.cssText='';return;}
+  const gw=980,vw=window.innerWidth;
+  if(vw<gw){
     const s=vw/gw;
     sc.style.transform='scale('+s+')';
-    sc.style.width=gw+'px';
-    sc.style.height='';
     sc.style.transformOrigin='top center';
-    sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';
+    sc.style.width=gw+'px';
+    sc.style.marginBottom='-'+(sc.scrollHeight*(1-s))+'px';
     sc.style.marginLeft='';
   } else {
-    sc.style.transform=sc.style.width=sc.style.height=sc.style.marginBottom=sc.style.marginLeft='';
+    sc.style.cssText='';
   }
 }
 window.addEventListener('resize',scaleGame);setTimeout(scaleGame,50);
@@ -1836,7 +2058,8 @@ async function act(ng){
 let lastSeq=-1;
 function renderAll_ext(){
   if(!G||!G.hands)return;
-  renderAll();
+  if(isMobile()){mbRenderAll();}
+  else{renderAll();}
   if(G.seq===lastSeq)return;
   lastSeq=G.seq;
   if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
