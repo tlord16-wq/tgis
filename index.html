@@ -235,7 +235,14 @@ body.desktop-mode {
     background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
     position: relative;
     overflow: hidden;
+    transition: padding-bottom 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     /* Felt texture overlay */
+  }
+
+  #mobile-board.panel-open {
+    /* Push board content up by ~40% of viewport so south cards stay visible */
+    padding-bottom: 42vh;
+    overflow: visible;
   }
 
   #mobile-board::before {
@@ -1413,9 +1420,17 @@ function openActionPanel(html){
   const p=document.getElementById('action-panel');
   p.innerHTML=html;
   p.classList.add('open');
+  const mb=document.getElementById('mobile-board');
+  if(mb&&window.isMobile&&window.isMobile()) mb.classList.add('panel-open');
   haptic('tap');
 }
-function closeActionPanel(){const p=document.getElementById('action-panel');p.classList.remove('open');p.innerHTML='';}
+function closeActionPanel(){
+  const p=document.getElementById('action-panel');
+  p.classList.remove('open');
+  p.innerHTML='';
+  const mb=document.getElementById('mobile-board');
+  if(mb) mb.classList.remove('panel-open');
+}
 function returnToTables(){if(window.fbReturnToTables)window.fbReturnToTables();}
 function humanBidOrder(a){if(window._hBO)window._hBO(a);}
 function humanBidPass1(){if(window._hBP1)window._hBP1();}
@@ -1734,10 +1749,14 @@ function setMsg(t) {
 function openActionPanel(html) {
   const p = document.getElementById('action-panel');
   p.innerHTML = html; p.classList.add('open');
+  const mb = document.getElementById('mobile-board');
+  if(mb && window.isMobile && window.isMobile()) mb.classList.add('panel-open');
 }
 function closeActionPanel() {
   const p = document.getElementById('action-panel');
   p.classList.remove('open'); p.innerHTML = '';
+  const mb = document.getElementById('mobile-board');
+  if(mb) mb.classList.remove('panel-open');
 }
 function openModal(html) {
   document.getElementById('modal-box').innerHTML = html;
