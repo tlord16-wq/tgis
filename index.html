@@ -1475,6 +1475,10 @@ function scaleGame(){
 }
 window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
 setTimeout(()=>{ scaleGame(); updateMobileVisibility(); }, 50);
+
+// Expose non-module functions so ES module can call them
+window.updateTableUI = updateTableUI;
+window.renderTablesSkeleton = renderTablesSkeleton;
 </script>
 
 <script type="module">
@@ -2210,8 +2214,10 @@ window.fbLoadTables=function(){
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
   tablesListener=onValue(ref(db,'rooms'),snap=>{
     const all=snap.val()||{};
-    ['founders','open','lordsarcade'].forEach(id=>updateTableUI(id,all[id]||null));
-  },err=>{});
+    ['founders','open','lordsarcade'].forEach(id=>{
+      if(window.updateTableUI) window.updateTableUI(id,all[id]||null);
+    });
+  },err=>{console.error('[TGIS] tables listener error:',err);});
 };
 
 window.stopTableListener=function(){
