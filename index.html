@@ -1210,8 +1210,7 @@ function dbg(msg){ const el=document.getElementById('debug'); if(el){el.style.di
 window.mbRenderAll = () => {}; // overwritten by module
 
 // window.mbRenderAll is set inside the ES module
-window.updateMobileVisibility = updateMobileVisibility;
-window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
+// window.updateMobileVisibility assigned below after function definition
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
@@ -1426,6 +1425,25 @@ function humanDiscard(i){if(window._hD)window._hD(i);}
 function humanStuckName(s){if(window._hSN)window._hSN(s);}
 function humanTradeKittyAction(){if(window._hTK)window._hTK();}
 
+function updateMobileVisibility() {
+  const mb = document.getElementById('mobile-board');
+  const gs = document.getElementById('game-scaler');
+  const lobby = document.getElementById('lobby');
+  if (!mb) return;
+  const onMobile = window.innerWidth <= 700;
+  const inGame = lobby && lobby.style.display === 'none';
+  if (onMobile) {
+    document.body.classList.remove('desktop-mode');
+    mb.style.display = inGame ? 'flex' : 'none';
+    if (gs) { gs.style.visibility='hidden'; gs.style.position='absolute'; gs.style.pointerEvents='none'; }
+  } else {
+    document.body.classList.add('desktop-mode');
+    mb.style.display = 'none';
+    if (gs) { gs.style.visibility=''; gs.style.position=''; gs.style.pointerEvents=''; }
+  }
+}
+window.updateMobileVisibility = updateMobileVisibility;
+
 function scaleGame(){
   const sc=document.getElementById('game-scaler');if(!sc)return;
   if(window.innerWidth<=700){sc.style.cssText='';return;}
@@ -1442,7 +1460,7 @@ function scaleGame(){
     sc.style.cssText='';
   }
 }
-window.addEventListener('resize',scaleGame);
+window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
 setTimeout(()=>{ scaleGame(); updateMobileVisibility(); }, 50);
 </script>
 
