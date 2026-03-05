@@ -377,25 +377,27 @@ body.desktop-mode {
   }
 
   .mb-west {
-    width: 72px;
+    width: 56px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     padding: 0 2px;
+    overflow: visible;
   }
 
   .mb-east {
-    width: 72px;
+    width: 56px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     padding: 0 2px;
+    overflow: visible;
   }
 
   .mb-center {
@@ -2675,14 +2677,20 @@ function mbRenderAll_impl() {
 
     // Cards row
     const row = document.createElement('div');
-    row.style.cssText = isSidePlayer
-      ? 'display:flex;flex-direction:column;gap:3px;align-items:center;'
-      : 'display:flex;gap:3px;flex-wrap:nowrap;justify-content:center;align-items:flex-end;';
+    if (isSidePlayer) {
+      // Overlapping vertical stack for west/east - fits in narrow column
+      row.style.cssText = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:0;';
+    } else {
+      row.style.cssText = 'display:flex;gap:3px;flex-wrap:nowrap;justify-content:center;align-items:flex-end;';
+    }
 
     // Mystery card
     if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
       const canM = isMe && isTurn && !G.mystUsed?.[seat];
       const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
+      if (isSidePlayer) {
+        mEl.style.cssText = 'width:36px;height:52px;margin:1px auto;';
+      }
       const mWrap = document.createElement('div');
       mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
       mWrap.appendChild(mEl);
@@ -2699,7 +2707,11 @@ function mbRenderAll_impl() {
       if (!card) return;
       if (!isMe) {
         // Other players' cards always show as backs
-        row.appendChild(mbCard(null, {back: true}));
+        const backEl = mbCard(null, {back: true});
+        if (isSidePlayer) {
+          backEl.style.cssText = 'width:36px;height:52px;margin:1px auto;flex-shrink:0;';
+        }
+        row.appendChild(backEl);
         return;
       }
       const canPlay = isTurn && canPlayCard(seat, i, false);
