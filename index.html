@@ -35,7 +35,7 @@ body {
   padding: 10px 8px 20px;
   overflow-x: hidden;
 }
-#game-scaler { transform-origin: top center; }
+#game-scaler { transform-origin: top center; overflow: hidden; }
 .game-header { text-align: center; margin-bottom: 8px; }
 .game-title {
   font-family: 'Playfair Display', serif;
@@ -328,48 +328,37 @@ body {
 
 /* ── MOBILE OPTIMIZATIONS ── */
 @media (max-width: 600px) {
+  body { overflow-x: hidden; }
+
   /* Lobby screens */
-  .lbtn { font-size: 1rem; padding: 14px; }
-  .linput { font-size: 1rem; padding: 12px; }
+  .lbtn { font-size: 1.05rem; padding: 15px; }
+  .linput { font-size: 1.05rem; padding: 13px; }
   .tcard { padding: 10px; }
-  .stile { min-height: 52px; font-size: 0.8rem; }
-  .stile .seat-lbl { font-size: 0.65rem; }
+  .stile { min-height: 56px; font-size: 0.85rem; }
+  .stile .seat-lbl { font-size: 0.68rem; }
 
-  /* Score bar */
-  #score-bar { flex-wrap: wrap; gap: 3px; padding: 4px 2px; }
-  #score-bar > div { padding: 4px 6px; font-size: 0.65rem; min-width: 0; flex: 1 1 auto; }
-  #score-bar .sbar-label { font-size: 0.55rem; }
-  #score-bar .sbar-val { font-size: 0.9rem; }
-  #new-game-btn, #rules-btn { padding: 6px 10px; font-size: 0.75rem; }
+  /* Score/bottom bar - BIGGER on mobile */
+  #score-bar { flex-wrap: wrap; gap: 2px; padding: 5px 3px; }
+  #score-bar > div { padding: 5px 4px; font-size: 0.72rem; min-width: 0; flex: 1 1 auto; }
+  #score-bar .sbar-label { font-size: 0.58rem; letter-spacing: 0.05em; }
+  #score-bar .sbar-val { font-size: 1rem; font-weight: 700; }
+  #new-game-btn { padding: 8px 10px; font-size: 0.8rem; }
+  #rules-btn { padding: 8px 10px; font-size: 0.8rem; }
 
-  /* Message bar */
-  #msg-bar { font-size: 0.9rem; padding: 8px 12px; }
+  /* Message bar - MUCH bigger */
+  #msg-bar { font-size: 1.05rem !important; padding: 10px 14px; letter-spacing: 0.01em; }
 
-  /* Cards - bigger touch targets */
-  .card { min-width: 44px; min-height: 60px; font-size: 0.85rem; border-radius: 7px; }
-  .card .cr { font-size: 1rem; }
-  .card .cb { font-size: 0.75rem; }
-  .playable { box-shadow: 0 0 0 3px #f0cc70, 0 0 14px 4px rgba(240,204,112,0.6); transform: translateY(-4px); }
-
-  /* Player zones - more compact */
-  .pzone { gap: 4px; }
-  .pzone-row { gap: 4px; }
-
-  /* Center info */
-  .player-label { font-size: 0.7rem; padding: 2px 6px; }
-  .name-badge { font-size: 0.75rem; padding: 3px 8px; }
-
-  /* Action panel */
-  #action-panel { padding: 14px 10px; }
-  #action-panel h2 { font-size: 1.1rem; }
-  #action-panel p { font-size: 0.85rem; }
-  .mbtn { font-size: 0.8rem; padding: 10px 8px; min-width: 44px; }
-  .btn-row { gap: 6px; flex-wrap: wrap; justify-content: center; }
+  /* Action panel - larger for touch */
+  #action-panel { padding: 16px 12px; }
+  #action-panel h2 { font-size: 1.2rem; }
+  #action-panel p { font-size: 0.9rem; }
+  .mbtn { font-size: 0.85rem; padding: 12px 10px; min-width: 48px; min-height: 48px; }
+  .btn-row { gap: 8px; flex-wrap: wrap; justify-content: center; }
 }
 
 @media (max-width: 400px) {
-  .card { min-width: 38px; min-height: 52px; font-size: 0.75rem; }
-  #msg-bar { font-size: 0.8rem; }
+  #msg-bar { font-size: 0.95rem !important; }
+  #score-bar .sbar-val { font-size: 0.9rem; }
 }
 </style>
 </head>
@@ -703,8 +692,17 @@ function humanTradeKittyAction(){if(window._hTK)window._hTK();}
 function scaleGame(){
   const sc=document.getElementById('game-scaler');if(!sc)return;
   const gw=980,vw=window.innerWidth;
-  if(vw<gw){const s=vw/gw;sc.style.transform='scale('+s+')';sc.style.width=gw+'px';sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';}
-  else{sc.style.transform=sc.style.width=sc.style.marginBottom='';}
+  if(vw<gw){
+    const s=vw/gw;
+    sc.style.transform='scale('+s+')';
+    sc.style.width=gw+'px';
+    sc.style.transformOrigin='top center';
+    sc.style.marginLeft='-'+((gw-vw)/2)+'px';
+    const scaledH=sc.getBoundingClientRect().height;
+    sc.style.marginBottom='-'+(scaledH/s*(1-s))+'px';
+  } else {
+    sc.style.transform=sc.style.width=sc.style.marginBottom=sc.style.marginLeft='';
+  }
 }
 window.addEventListener('resize',scaleGame);setTimeout(scaleGame,50);
 </script>
