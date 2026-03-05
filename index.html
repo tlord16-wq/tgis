@@ -1611,12 +1611,16 @@ function renderPlayerHand(seat) {
   mystRow.className = 'pzone-row';
   if (!G.mystUsed[seat] && G.myst[seat]) {
     const isMystTurn = G.phase === 'play' && G.current === seat && !G.mystUsed[seat] && G.myst[seat];
-    const canM = isMe && isMystTurn;
-    const mEl = makeCardEl(null, { back:true, mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null });
+    const isRevealed = G.mystRevealed && G.mystRevealed[seat];
+    const canM = isMe && isMystTurn && canPlayCard(seat, -1, true);
+    // Revealed mystery (trump) is face-up for everyone; normal mystery is face-down
+    const mEl = isRevealed
+      ? makeCardEl(G.myst[seat], { mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null })
+      : makeCardEl(null, { back:true, mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null });
     const holder = document.createElement('div');
     holder.className = 'mystery-holder'; holder.appendChild(mEl);
     const mlbl = document.createElement('div');
-    mlbl.className = 'mystery-label'; mlbl.textContent = '✦ mystery';
+    mlbl.className = 'mystery-label'; mlbl.textContent = isRevealed ? '✦ trump mystery' : '✦ mystery';
     const mw = document.createElement('div');
     mw.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
     mw.appendChild(holder); mw.appendChild(mlbl);
@@ -1767,15 +1771,16 @@ function canPlayCard(seat, idx, isMystery) {
   if (G.sittingOut === seat) return false;
   if (isMystery) {
     if (G.mystUsed[seat] || !G.myst[seat]) return false;
-    // If mystery card is trump, it must follow suit rules like any trump card
-    if (!G.ledSuit) return true;
+    const isRevealed = G.mystRevealed && G.mystRevealed[seat];
+    if (!G.ledSuit) return true; // leading — always can play
     const mystSuit = effSuit(G.myst[seat], G.trump);
     const hasSuit = G.hands[seat].some(c => effSuit(c, G.trump) === G.ledSuit);
-    const mystMatchesLed = mystSuit === G.ledSuit;
-    // If player has led suit in hand, mystery must also follow if it matches led suit
-    // If player has NO led suit in hand but mystery matches, mystery must be played
-    if (hasSuit) return mystMatchesLed; // can only play mystery if it follows suit
-    // No led suit in hand — mystery is always playable
+    if (isRevealed) {
+      // Revealed mystery (trump) must follow suit strictly
+      if (hasSuit) return mystSuit === G.ledSuit; // must follow if it matches
+      return true; // no led suit in hand — can play
+    }
+    // Normal mystery: can play any time (free card)
     return true;
   }
   if (idx < 0 || idx >= G.hands[seat].length) return false;
@@ -1874,8 +1879,10 @@ function aiDiscardState(ng, player) {
   // Also consider discarding mystery card if it has lower value than worst hand card
   const mystVal = myst ? cardVal(myst, ng.trump, null) : Infinity;
   if (myst && mystVal < lowestVal) {
-    // Discard mystery: upcard (trump) becomes new mystery
+    // Discard mystery: upcard (trump) becomes new mystery (revealed to all)
     ng.myst[player] = ng.upcard;
+    if(!ng.mystRevealed)ng.mystRevealed={};
+    ng.mystRevealed[player] = true;
   } else {
     hand.splice(li, 1);
   }
@@ -2213,6 +2220,7 @@ function showMyBidUI() {
     const kitty=deck.slice(20);
     return{trump:null,maker:null,makerTeam:null,hands,myst,
       mystUsed:{south:false,west:false,north:false,east:false},
+      mystRevealed:{south:false,west:false,north:false,east:false},
       mystBrokeTrump:{south:false,west:false,north:false,east:false},
       trick:{},
       trickWins:[0,0],trickCount:0,ledSuit:null,leader:null,current:null,
@@ -2382,6 +2390,7 @@ async function startGameListener(){
     if(!G.hands) G.hands={};
     if(!G.myst) G.myst={};
     if(!G.mystUsed) G.mystUsed={};
+    if(!G.mystRevealed) G.mystRevealed={};
     if(!G.mystBrokeTrump) G.mystBrokeTrump={};
     ALL_P.forEach(p=>{
       if(!G.hands[p]) G.hands[p]=[];
@@ -2445,6 +2454,7 @@ async function processAI(ng){
       if(!ng.hands)ng.hands={};
       if(!ng.myst)ng.myst={};
       if(!ng.mystUsed)ng.mystUsed={};
+      if(!ng.mystRevealed)ng.mystRevealed={};
       if(!ng.mystBrokeTrump)ng.mystBrokeTrump={};
       ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
       await sleep(1200);
@@ -2586,7 +2596,7 @@ window._hD  =i=>{
   const discardingMystery = ng.myst[mySeat] && hand[i] &&
     hand[i].r===ng.myst[mySeat].r && hand[i].s===ng.myst[mySeat].s;
   hand.splice(i,1);
-  if(discardingMystery) ng.myst[mySeat]=ng.upcard;
+  if(discardingMystery){ ng.myst[mySeat]=ng.upcard; if(!ng.mystRevealed)ng.mystRevealed={}; ng.mystRevealed[mySeat]=true; }
   applyStartPlay(ng);act(ng);
 };
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
@@ -2627,6 +2637,8 @@ window.humanDiscardMystery=()=>{
   const ng=JSON.parse(JSON.stringify(G));
   // Discard the mystery card; upcard (trump) becomes new mystery
   ng.myst[mySeat]=ng.upcard;
+  if(!ng.mystRevealed)ng.mystRevealed={};
+  ng.mystRevealed[mySeat]=true;
   applyStartPlay(ng);act(ng);
 };
 window.humanBidOrder=a=>window._hBO&&window._hBO(a);
@@ -2759,15 +2771,19 @@ function mbRenderAll_impl() {
 
     // Mystery card
     if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
-      const canM = isMe && isTurn && !G.mystUsed?.[seat];
-      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
+      const isRevealed = G.mystRevealed && G.mystRevealed[seat];
+      const canM = isMe && isTurn && canPlayCard(seat, -1, true);
+      // Revealed mystery shows face-up (trump card everyone can see)
+      const mEl = isRevealed
+        ? mbCard(G.myst[seat], {isTrump:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null})
+        : mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
       if (isSidePlayer) mEl.style.cssText = 'width:36px;height:52px;flex-shrink:0;';
       const mWrap = document.createElement('div');
       mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;z-index:10;';
       mWrap.appendChild(mEl);
       const mLbl = document.createElement('div');
       mLbl.className = 'mb-mystery-label';
-      mLbl.textContent = '\u2736';
+      mLbl.textContent = isRevealed ? '\u2736 trump' : '\u2736';
       mWrap.appendChild(mLbl);
       row.appendChild(mWrap);
     }
