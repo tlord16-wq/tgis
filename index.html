@@ -2322,6 +2322,7 @@ function subscribeRoom(){
 }
 
 async function startGameListener(){
+  _lastProcessedSeq = -1; // reset for new game
   const seatsSnap=await get(ref(db,'rooms/'+myTable+'/seats'));
   if(seatsSnap.exists()){roomSeats=seatsSnap.val();buildNameMap(roomSeats);}
   // Verify mySeat from seats data
@@ -2348,8 +2349,9 @@ async function startGameListener(){
       else if(!Array.isArray(G.hands[p])) G.hands[p]=Object.values(G.hands[p]).filter(Boolean);
     });
     renderAll_ext();
-    // Only drive processAI when seq actually advances (not on every echo)
-    if(isHost && newSeq > prevSeq){
+    // Drive processAI exactly once per unique seq value
+    if(isHost && newSeq !== _lastProcessedSeq){
+      _lastProcessedSeq = newSeq;
       processAI(JSON.parse(JSON.stringify(G)));
     }
     // Fallback: if resolving phase and we're not host, wait 3s then resolve ourselves
@@ -2376,6 +2378,7 @@ async function startGameListener(){
 }
 
 let _aiSeq = 0;
+let _lastProcessedSeq = -1;
 
 async function processAI(ng){
   if(!isHost)return;
@@ -2497,12 +2500,14 @@ function renderAll_ext(){
   if(G.phase==='gameover')showGameOver(G);
   if(G.phase==='bid'){
     const b=G.bidOrder?.[G.bidIdx];
-    if(b!==mySeat)setMsg((NAME[b]||'?')+' is deciding…');
+    if(b&&b!==mySeat)setMsg((NAME[b]||'?')+' is deciding…');
+    else if(b===mySeat) {/* bid UI handles its own message */}
+  }else if(G.phase==='discard'){
+    if(G.dealer===mySeat) setMsg('Pick a card to discard ▼');
+    else setMsg((NAME[G.dealer]||'?')+' is discarding…');
   }else if(G.phase==='play'){
     if(G.current===mySeat)setMsg(makePlayMsg());
-    else if(G.current){setMsg(NAME[G.current]+' is thinking…');closeActionPanel();}
-  }else if(G.phase==='discard'&&G.dealer!==mySeat){
-    setMsg(NAME[G.dealer]+' is discarding…');
+    else if(G.current){setMsg((NAME[G.current]||'?')+' is thinking…');closeActionPanel();}
   }
 }
 
