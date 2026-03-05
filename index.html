@@ -1371,7 +1371,7 @@ function updateTableUI(tableId,data){
         if(!nm){showScr('name');return;}
         haptic('select');
         if(window.fbClaimSeat)window.fbClaimSeat(tableId,s,nm);
-        
+        else dbg('Firebase not ready yet');
       };
     }
   });
@@ -1497,7 +1497,9 @@ try {
     appId:"1:730988825325:web:1cf3aa213b7ea61493dae4"
   });
   db = getDatabase(app);
+  dbg('Firebase connected ✓');
 } catch(e) {
+  dbg('Firebase init error: '+e.message);
 }
 
 const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
@@ -2206,12 +2208,14 @@ function showMyBidUI() {
   
 // ── LOBBY ──
 window.fbLoadTables=function(){
-  if(!db){;return;}
+  if(!db){dbg('DB not ready');return;}
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+  dbg('Listening to tables…');
   tablesListener=onValue(ref(db,'rooms'),snap=>{
     const all=snap.val()||{};
+    dbg('Tables snapshot received');
     ['founders','open','lordsarcade'].forEach(id=>updateTableUI(id,all[id]||null));
-  },err=>);
+  },err=>dbg('DB error: '+err.message));
 };
 
 window.stopTableListener=function(){
@@ -2220,14 +2224,15 @@ window.stopTableListener=function(){
 
 window.fbClearTable=async function(tableId){
   if(!db)return;
-  try{await remove(ref(db,'rooms/'+tableId));;}
-  catch(e){;}
+  try{await remove(ref(db,'rooms/'+tableId));dbg('Cleared '+tableId);}
+  catch(e){dbg('Clear error: '+e.message);}
 };
 
 window.fbClaimSeat=async function(tableId,seat,name){
-  if(!db){;return;}
+  if(!db){dbg('DB not ready');return;}
   mySeat=seat;myTable=tableId;roomRef=ref(db,'rooms/'+tableId);
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
+  dbg('Claiming '+seat+' at '+tableId+'…');
   try{
     const snap=await get(roomRef);
     if(!snap.exists()){
@@ -2240,7 +2245,7 @@ window.fbClaimSeat=async function(tableId,seat,name){
         // Game in progress - allow rejoin if seat matches our saved session
         const savedSess = (() => { try { return JSON.parse(localStorage.getItem('tgis_session')||'null'); } catch(e){return null;} })();
         const isSavedSeat = savedSess && savedSess.seat===seat && savedSess.tableId===tableId;
-        if(!isSavedSeat){;window.fbLoadTables();return;}
+        if(!isSavedSeat){dbg('Game in progress, seat not yours');window.fbLoadTables();return;}
         // Rejoin: update seat with new playerId, restore mySeat
         mySeat=seat; myTable=tableId; isHost=d.host===playerId||!d.host;
         await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:playerId,name,human:true});
@@ -2250,7 +2255,7 @@ window.fbClaimSeat=async function(tableId,seat,name){
         subscribeRoom();
         return;
       }
-      if(d.seats?.[seat]&&d.seats[seat].id!==playerId){;window.fbLoadTables();return;}
+      if(d.seats?.[seat]&&d.seats[seat].id!==playerId){dbg('Seat taken!');window.fbLoadTables();return;}
       for(const s of ALL_P){
         if(d.seats?.[s]?.id===playerId&&s!==seat)
           await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);
@@ -2261,11 +2266,12 @@ window.fbClaimSeat=async function(tableId,seat,name){
     }
     // Save session for rejoin
     try { localStorage.setItem('tgis_session', JSON.stringify({name, tableId, seat, playerId})); } catch(e) {}
+    dbg('Seat claimed! Loading room…');
     const snap2=await get(roomRef);
     roomSeats=snap2.val()?.seats||{};
     showSeatedView(myTable,mySeat,snap2.val()||{});
     subscribeRoom();
-  }catch(e){;}
+  }catch(e){dbg('Claim error: '+e.message);}
 };
 
 window.fbLeaveSeat=async function(){
@@ -2292,6 +2298,7 @@ window.fbStartGame=async function(){
   buildNameMap(roomSeats);
   const gs=buildInitialGameState();
   await update(roomRef,{phase:'playing',gameState:gs});
+  dbg('Game started!');
 };
 
 window.fbReturnToTables=async function(){
@@ -2338,7 +2345,7 @@ async function startGameListener(){
       if(roomSeats[s]&&roomSeats[s].id===playerId) mySeat=s;
     });
   }
-  ));
+  dbg('Game started. isHost='+isHost+' mySeat='+mySeat+' seats='+JSON.stringify(Object.keys(roomSeats)));
   onValue(ref(db,'rooms/'+myTable+'/gameState'),snap=>{
     if(!snap.exists())return;
     const newState=snap.val();
@@ -2366,6 +2373,7 @@ async function startGameListener(){
       const seq=G.seq;
       setTimeout(async()=>{
         if(G.seq===seq&&G.phase==='resolving'){
+          dbg('Fallback resolve triggered');
           isHost=true;
           const ng=JSON.parse(JSON.stringify(G));
           if(!ng.trick)ng.trick={};
@@ -2417,10 +2425,11 @@ async function processAI(ng){
       await sleep(1200);
       if(mySeq!==_aiSeq)return; // superseded
       applyResolveTrick(ng);
+      dbg('Resolved trick, new phase='+ng.phase+' trickCount='+ng.trickCount);
       if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
       await pushG(ng);
       return;
-    } catch(e){ ; return; }
+    } catch(e){ dbg('RESOLVE ERROR: '+e.message); return; }
   }
 
   if(ng.phase==='bid'){
@@ -2442,6 +2451,7 @@ async function processAI(ng){
   }
 
   if(ng.phase==='play'&&ng.current&&!isHuman(ng.current)){
+    dbg('AI playing: '+ng.current);
     await sleep(700);
     if(mySeq!==_aiSeq)return; // superseded
     doAIPlayOnState(ng,ng.current);
@@ -2449,7 +2459,7 @@ async function processAI(ng){
     return;
   }
 
-  ));
+  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' dealer='+ng.dealer+' isHuman='+(ng.current&&isHuman(ng.current)));
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
@@ -2480,6 +2490,7 @@ function renderAll_ext(){
           (G.phase==='discard' && G.dealer && !isHumanSeat(G.dealer)) ||
           G.phase==='resolving';
         if(aiStuck){
+          dbg('Watchdog: kicking stuck AI at seq='+watchSeq+' phase='+G.phase);
           _aiSeq++; // invalidate any sleeping processAI
           processAI(JSON.parse(JSON.stringify(G)));
         }
@@ -2544,6 +2555,7 @@ window._hD  =i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.ha
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
 window._hTK =()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
 window._humanPlayCard =i=>{
+  dbg('humanPlayCard i='+i+' mySeat='+mySeat+' current='+G.current);
   try {
     const ng=JSON.parse(JSON.stringify(G));
     // Normalize all potentially missing objects
@@ -2557,15 +2569,16 @@ window._humanPlayCard =i=>{
       else if(!Array.isArray(ng.hands[p])) ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);
     });
     applyPlayCard(ng,mySeat,i,false);
+    dbg('applyPlayCard done, phase='+ng.phase+' seq='+ng.seq);
     act(ng);
-  } catch(e) { ; }
+  } catch(e) { dbg('PLAY ERROR: '+e.message); }
 };
 window._humanPlayMystery=()=>{
   try {
     const ng=JSON.parse(JSON.stringify(G));
     if(ng.hands) ALL_P.forEach(p=>{if(ng.hands[p]&&!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
     applyPlayCard(ng,mySeat,-1,true);act(ng);
-  } catch(e){;}
+  } catch(e){dbg('MYSTERY ERROR: '+e.message);}
 };
 window.closeModal=closeModal;
 window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();};
@@ -2797,6 +2810,7 @@ function mbRenderAll_impl() {
 // Override the window.mbRenderAll placeholder with the real implementation
 window.mbRenderAll = mbRenderAll_impl;
 
+dbg('Module ready ✓');
 
 </script>
 </body>
