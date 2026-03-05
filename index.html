@@ -2697,7 +2697,12 @@ function mbRenderAll_impl() {
     if (!Array.isArray(hand)) return;
     hand.forEach((card, i) => {
       if (!card) return;
-      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
+      if (!isMe) {
+        // Other players' cards always show as backs
+        row.appendChild(mbCard(null, {back: true}));
+        return;
+      }
+      const canPlay = isTurn && canPlayCard(seat, i, false);
       const isTrump = G.trump && (
         card.s===G.trump ||
         (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump]))
@@ -2707,7 +2712,6 @@ function mbRenderAll_impl() {
         playable: canPlay,
         onClick: canPlay ? ()=>window._humanPlayCard(i) : null
       });
-      if (!isMe) { el.className = 'mb-card back'; }
       row.appendChild(el);
     });
 
