@@ -1778,83 +1778,9 @@ function humanPlayCard(idx) {
     { window.humanPlayCard(idx); return; }
 }
 
-function humanPlayMystery() {
-  if (window.humanPlayMystery && window.humanPlayMystery !== humanPlayMystery)
-    { window.humanPlayMystery(); return; }
-  if (!canPlayCard(mySeat, -1, true)) return;
-  const ng = JSON.parse(JSON.stringify(G));
-  applyPlayCard(ng, mySeat, -1, true);
-  pushAndProcess(ng);
-}
-
-function humanBidOrder(alone) {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  if (alone) setGoingAloneState(ng, mySeat);
-  applyOrderUp(ng, mySeat);
-  pushAndProcess(ng);
-}
-
-function humanBidPass1() {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  ng.bidIdx++;
-  pushAndProcess(ng);
-}
-
-function humanNameSuit(s) {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  applyNameTrump(ng, mySeat, s);
-  pushAndProcess(ng);
-}
-
-function humanNameSuitAlone(s) {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  setGoingAloneState(ng, mySeat);
-  applyNameTrump(ng, mySeat, s);
-  pushAndProcess(ng);
-}
-
-function humanBidPass2() {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  ng.bidIdx++;
-  pushAndProcess(ng);
-}
-
-function humanDiscard(idx) {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  ng.hands[mySeat].splice(idx, 1);
-  applyStartPlay(ng);
-  pushAndProcess(ng);
-}
-
-function humanStuckName(suit) {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  applyNameTrump(ng, mySeat, suit);
-  pushAndProcess(ng);
-}
-
-function humanTradeKittyAction() {
-  closeActionPanel();
-  const ng = JSON.parse(JSON.stringify(G));
-  const oldHand = ng.hands[mySeat].slice();
-  ng.hands[mySeat] = ng.kitty.slice(0, 4);
-  ng.kitty = oldHand;
-  ng.tradeFlipped = [ng.hands[mySeat][0], ng.hands[mySeat][1]];
-  // Show flipped + ask trump via action panel after push
-  pushGameState(ng);
-}
-
-async function pushAndProcess(ng) {
-  // If host, process AI turns chain after push
-  await pushGameState(ng);
-  if (isHost) processAfterPush(ng);
-}
+// Human action functions — all route through act() which calls pushG() + processAI()
+// These are defined here (inside module) so they have access to G, mySeat, etc.
+// The window.humanXxx wrappers at the bottom of this module point to these.
 
 // ═══════════════════════════════════════════
 // GAME LOGIC (pure state mutations, no DOM)
@@ -2020,48 +1946,7 @@ function applyNewHand(ng) {
 // ═══════════════════════════════════════════
 // HOST: PROCESS AI TURNS AFTER ANY PUSH
 // ═══════════════════════════════════════════
-async function processAfterPush(ng) {
-  if (!isHost) return;
-  let changed = false;
-
-  // Resolving trick
-  if (ng.phase === 'resolving') {
-    await new Promise(r => setTimeout(r, 1400));
-    applyResolveTrick(ng);
-    changed = true;
-  }
-
-  // Bidding
-  if (ng.phase === 'bid') {
-    const bidder = ng.bidOrder[ng.bidIdx];
-    if (bidder && !isSeatHumanAny(bidder)) {
-      await new Promise(r => setTimeout(r, 600));
-      doAIBidOnState(ng, bidder);
-      changed = true;
-    }
-  }
-
-  // Play
-  if (ng.phase === 'play' && ng.current && !isSeatHumanAny(ng.current)) {
-    await new Promise(r => setTimeout(r, 800));
-    doAIPlayOnState(ng, ng.current);
-    changed = true;
-    // Chain if still AI turn
-    if (!isSeatHumanAny(ng.current)) {
-      await new Promise(r => setTimeout(r, 700));
-      doAIPlayOnState(ng, ng.current);
-    }
-  }
-
-  // Game over
-  if (ng.phase === 'gameover') {
-    await pushGameState(ng);
-    showGameOver(ng);
-    return;
-  }
-
-  if (changed) await pushGameState(ng);
-}
+// processAfterPush removed — processAI() is the single AI driver, called via act() and the Firebase listener
 
 // ═══════════════════════════════════════════
 // AI BIDDING LOGIC
@@ -2099,7 +1984,7 @@ function doAIBid(player) {
   if (!isHost) return;
   const ng = JSON.parse(JSON.stringify(G));
   doAIBidOnState(ng, player);
-  pushAndProcess(ng);
+  act(ng);
 }
 
 function aiShouldOrderUp(ng, player) {
@@ -2224,7 +2109,7 @@ function doAIPlay(player) {
   if (!isHost) return;
   const ng = JSON.parse(JSON.stringify(G));
   doAIPlayOnState(ng, player);
-  pushAndProcess(ng);
+  act(ng);
 }
 
 function trickWinnerSoFarState(ng) {
