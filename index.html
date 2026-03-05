@@ -1879,7 +1879,9 @@ function aiDiscardState(ng, player) {
   // Also consider discarding mystery card if it has lower value than worst hand card
   const mystVal = myst ? cardVal(myst, ng.trump, null) : Infinity;
   if (myst && mystVal < lowestVal) {
-    // Discard mystery: upcard (trump) becomes new mystery (revealed to all)
+    // applyOrderUp always pushes upcard last — pop it so it becomes mystery only
+    hand.pop();
+    // upcard becomes new mystery (revealed to all)
     ng.myst[player] = ng.upcard;
     if(!ng.mystRevealed)ng.mystRevealed={};
     ng.mystRevealed[player] = true;
@@ -2596,7 +2598,14 @@ window._hD  =i=>{
   const discardingMystery = ng.myst[mySeat] && hand[i] &&
     hand[i].r===ng.myst[mySeat].r && hand[i].s===ng.myst[mySeat].s;
   hand.splice(i,1);
-  if(discardingMystery){ ng.myst[mySeat]=ng.upcard; if(!ng.mystRevealed)ng.mystRevealed={}; ng.mystRevealed[mySeat]=true; }
+  if(discardingMystery){
+    // upcard is still in hand — remove it since it's becoming the mystery
+    const upcardIdx=hand.findIndex(c=>c&&c.r===ng.upcard.r&&c.s===ng.upcard.s);
+    if(upcardIdx!==-1) hand.splice(upcardIdx,1);
+    ng.myst[mySeat]=ng.upcard;
+    if(!ng.mystRevealed)ng.mystRevealed={};
+    ng.mystRevealed[mySeat]=true;
+  }
   applyStartPlay(ng);act(ng);
 };
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
@@ -2635,7 +2644,9 @@ window.humanDiscard=i=>window._hD&&window._hD(i);
 window.humanDiscardMystery=()=>{
   closeActionPanel();
   const ng=JSON.parse(JSON.stringify(G));
-  // Discard the mystery card; upcard (trump) becomes new mystery
+  // applyOrderUp always pushes upcard as last card — pop it so it becomes mystery only
+  ng.hands[mySeat].pop();
+  // upcard becomes new mystery (revealed/face-up for all)
   ng.myst[mySeat]=ng.upcard;
   if(!ng.mystRevealed)ng.mystRevealed={};
   ng.mystRevealed[mySeat]=true;
