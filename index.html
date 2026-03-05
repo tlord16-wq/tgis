@@ -1765,7 +1765,19 @@ function toggleHelp() { document.getElementById('help-panel').classList.toggle('
 function canPlayCard(seat, idx, isMystery) {
   if (G.phase !== 'play' || G.current !== seat) return false;
   if (G.sittingOut === seat) return false;
-  if (isMystery) return !G.mystUsed[seat] && G.myst[seat] !== null;
+  if (isMystery) {
+    if (G.mystUsed[seat] || !G.myst[seat]) return false;
+    // If mystery card is trump, it must follow suit rules like any trump card
+    if (!G.ledSuit) return true;
+    const mystSuit = effSuit(G.myst[seat], G.trump);
+    const hasSuit = G.hands[seat].some(c => effSuit(c, G.trump) === G.ledSuit);
+    const mystMatchesLed = mystSuit === G.ledSuit;
+    // If player has led suit in hand, mystery must also follow if it matches led suit
+    // If player has NO led suit in hand but mystery matches, mystery must be played
+    if (hasSuit) return mystMatchesLed; // can only play mystery if it follows suit
+    // No led suit in hand — mystery is always playable
+    return true;
+  }
   if (idx < 0 || idx >= G.hands[seat].length) return false;
   const card = G.hands[seat][idx];
   if (!card) return false;
@@ -1851,9 +1863,22 @@ function applyOrderUp(ng, player) {
 
 function aiDiscardState(ng, player) {
   const hand = ng.hands[player];
+  const myst = ng.myst[player];
+  // Find lowest value card including mystery card as a candidate
   let li = 0;
-  hand.forEach((c,i) => { if (cardVal(c,ng.trump,null) < cardVal(hand[li],ng.trump,null)) li = i; });
-  hand.splice(li, 1);
+  let lowestVal = cardVal(hand[0], ng.trump, null);
+  hand.forEach((c,i) => {
+    const v = cardVal(c, ng.trump, null);
+    if (v < lowestVal) { lowestVal = v; li = i; }
+  });
+  // Also consider discarding mystery card if it has lower value than worst hand card
+  const mystVal = myst ? cardVal(myst, ng.trump, null) : Infinity;
+  if (myst && mystVal < lowestVal) {
+    // Discard mystery: upcard (trump) becomes new mystery
+    ng.myst[player] = ng.upcard;
+  } else {
+    hand.splice(li, 1);
+  }
 }
 
 function applyNameTrump(ng, player, suit) {
@@ -2534,7 +2559,9 @@ function showDiscardUI(){
   const hand=G.hands[mySeat];
   const btns=hand.map((c,i)=>{const t=effSuit(c,G.trump)===G.trump,r=c.s==='H'||c.s==='D';return`<button class="mbtn mbtn-discard ${r?'is-red':''} ${t?'is-trump':''}" onclick="window.humanDiscard(${i})">${c.r}${SYM[c.s]}${t?' ★':''}</button>`;}).join('');
   const pu=hand[hand.length-1];
-  openActionPanel(`<h2>Discard a Card</h2><p>Picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p><p style="font-size:0.82rem;color:var(--gold)">✦ mystery can't be discarded. Trump ★</p><div class="btn-row">${btns}</div>`);
+  // Mystery card can also be discarded — if so, upcard becomes new mystery
+  const mystBtn=G.myst[mySeat]?`<button class="mbtn mbtn-discard" style="border-color:var(--gold);color:var(--gold)" onclick="window.humanDiscardMystery()">✦ Mystery</button>`:'';
+  openActionPanel(`<h2>Discard a Card</h2><p>Picked up: <span style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:${pu.s==='H'||pu.s==='D'?'#ff7070':'#f5edd6'}">${pu.r}${SYM[pu.s]}</span></p><p style="font-size:0.82rem;color:var(--gold)">Trump ★ · Discard ✦ Mystery to make trump your new mystery</p><div class="btn-row">${btns}${mystBtn}</div>`);
 }
 
 function showGameOver(ng){
@@ -2551,7 +2578,17 @@ window._hBP1=()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.b
 window._hNS =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
 window._hNSA=s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));setGoingAloneState(ng,mySeat);applyNameTrump(ng,mySeat,s);act(ng);};
 window._hBP2=()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.bidIdx++;act(ng);};
-window._hD  =i=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));ng.hands[mySeat].splice(i,1);applyStartPlay(ng);act(ng);};
+window._hD  =i=>{
+  closeActionPanel();
+  const ng=JSON.parse(JSON.stringify(G));
+  const hand=ng.hands[mySeat];
+  // If dealer discards their own mystery card, the received trump upcard becomes new mystery
+  const discardingMystery = ng.myst[mySeat] && hand[i] &&
+    hand[i].r===ng.myst[mySeat].r && hand[i].s===ng.myst[mySeat].s;
+  hand.splice(i,1);
+  if(discardingMystery) ng.myst[mySeat]=ng.upcard;
+  applyStartPlay(ng);act(ng);
+};
 window._hSN =s=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));applyNameTrump(ng,mySeat,s);act(ng);};
 window._hTK =()=>{closeActionPanel();const ng=JSON.parse(JSON.stringify(G));const oh=ng.hands[mySeat].slice();ng.hands[mySeat]=ng.kitty.slice(0,4);ng.kitty=oh;ng.tradeFlipped=[ng.hands[mySeat][0],ng.hands[mySeat][1]];pushG(ng);};
 window._humanPlayCard =i=>{
@@ -2585,6 +2622,13 @@ window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();
 window.humanStuckName=s=>window._hSN&&window._hSN(s);
 window.humanTradeKittyAction=()=>window._hTK&&window._hTK();
 window.humanDiscard=i=>window._hD&&window._hD(i);
+window.humanDiscardMystery=()=>{
+  closeActionPanel();
+  const ng=JSON.parse(JSON.stringify(G));
+  // Discard the mystery card; upcard (trump) becomes new mystery
+  ng.myst[mySeat]=ng.upcard;
+  applyStartPlay(ng);act(ng);
+};
 window.humanBidOrder=a=>window._hBO&&window._hBO(a);
 window.humanBidPass1=()=>window._hBP1&&window._hBP1();
 window.humanBidPass2=()=>window._hBP2&&window._hBP2();
