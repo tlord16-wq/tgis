@@ -2,10 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="This Game Is Stupid">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e2718">
 <title>This Game Is Stupid</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════════════════════
+   ROOT VARIABLES
+═══════════════════════════════════════════════════════════ */
 :root {
   --felt: #1c5c30;
   --felt-dark: #123d1f;
@@ -21,60 +29,63 @@
   --mystery-back-a: #1a1a8B;
   --mystery-back-b: #10106b;
   --shadow: rgba(0,0,0,0.7);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body {
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL RESET
+═══════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   background: #0e2718;
-  background-image: radial-gradient(ellipse at 30% 20%, #1a3d24 0%, #0a1e10 100%);
   font-family: 'Crimson Text', Georgia, serif;
   color: var(--cream);
-  min-height: 100vh;
-  overflow-x: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP LAYOUT (>700px) — unchanged from original
+═══════════════════════════════════════════════════════════ */
+body.desktop-mode {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 8px 20px;
   overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse at 30% 20%, #1a3d24 0%, #0a1e10 100%);
 }
+
 #game-scaler { transform-origin: top center; overflow: hidden; }
+
+/* All desktop styles preserved exactly */
 .game-header { text-align: center; margin-bottom: 8px; }
-.game-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.7rem; font-weight: 900;
-  color: var(--gold-bright); letter-spacing: 3px;
-  text-shadow: 0 0 20px rgba(201,168,76,0.4), 2px 2px 0 rgba(0,0,0,0.8);
-}
+.game-title { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 900; color: var(--gold-bright); letter-spacing: 3px; text-shadow: 0 0 20px rgba(201,168,76,0.4), 2px 2px 0 rgba(0,0,0,0.8); }
 .game-subtitle { font-family: 'Crimson Text', serif; font-style: italic; font-size: 0.85rem; color: var(--gold-dim); letter-spacing: 2px; }
-#board {
-  position: relative; width: 900px; height: 740px;
-  background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
-  border-radius: 18px; border: 5px solid var(--gold-dim);
-  box-shadow: 0 0 0 2px #0a1e10, 0 0 0 4px var(--gold), 0 0 0 6px #0a1e10, 0 0 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.35);
-  overflow: visible; isolation: isolate;
-}
-#board::before {
-  content: ''; position: absolute; inset: 0; border-radius: 14px;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-  pointer-events: none;
-}
-.card {
-  position: relative; width: 62px; height: 90px; border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.3);
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 4px 5px; font-family: 'Playfair Display', serif; font-size: 0.88rem; font-weight: 700;
-  flex-shrink: 0; user-select: none; background: var(--cream);
-  box-shadow: 1px 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.8);
-  transition: transform 0.15s ease, box-shadow 0.15s ease; touch-action: manipulation;
-}
+#board { position: relative; width: 900px; height: 740px; background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%); border-radius: 18px; border: 5px solid var(--gold-dim); box-shadow: 0 0 0 2px #0a1e10, 0 0 0 4px var(--gold), 0 0 0 6px #0a1e10, 0 0 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.35); overflow: visible; isolation: isolate; }
+#board::before { content: ''; position: absolute; inset: 0; border-radius: 14px; background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); pointer-events: none; }
+.card { position: relative; width: 62px; height: 90px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.3); display: flex; flex-direction: column; justify-content: space-between; padding: 4px 5px; font-family: 'Playfair Display', serif; font-size: 0.88rem; font-weight: 700; flex-shrink: 0; user-select: none; background: var(--cream); box-shadow: 1px 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.8); transition: transform 0.15s ease, box-shadow 0.15s ease; touch-action: manipulation; }
 .card.red-card { color: var(--red-card); }
 .card.black-card { color: var(--black-card); }
 .card .ct { line-height: 1.15; }
 .card .cm { text-align: center; font-size: 1.25rem; line-height: 1; }
 .card .cb { line-height: 1.15; transform: rotate(180deg); }
-.card.back {
-  background: repeating-linear-gradient(45deg, var(--card-back-a) 0px, var(--card-back-a) 5px, var(--card-back-b) 5px, var(--card-back-b) 10px);
-  box-shadow: 1px 2px 5px rgba(0,0,0,0.6);
-}
+.card.back { background: repeating-linear-gradient(45deg, var(--card-back-a) 0px, var(--card-back-a) 5px, var(--card-back-b) 5px, var(--card-back-b) 10px); box-shadow: 1px 2px 5px rgba(0,0,0,0.6); }
 .card.back::after { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; }
 .card.mystery-glow { border: 2px solid var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.8), 0 0 4px rgba(201,168,76,0.4), 1px 2px 6px rgba(0,0,0,0.55); }
 .card.back.mystery-glow { background: repeating-linear-gradient(45deg, var(--mystery-back-a) 0px, var(--mystery-back-a) 5px, var(--mystery-back-b) 5px, var(--mystery-back-b) 10px); }
@@ -106,7 +117,6 @@ body {
 #lbl-north { top: 340px; left: 50%; transform: translateX(-50%); }
 #lbl-west { left: 8px; top: calc(50% - 175px); }
 #lbl-east { right: 12px; top: 50%; transform: translateY(-160px); }
-/* Human player seat highlight */
 .plabel.is-me { color: var(--gold-bright); border-color: var(--gold); background: rgba(0,0,0,0.75); font-weight: 700; }
 .mystery-label { font-family: 'Crimson Text', serif; font-size: 0.6rem; font-style: italic; color: var(--gold); text-align: center; white-space: nowrap; text-shadow: 0 0 4px rgba(201,168,76,0.5); display: block; margin-top: 2px; }
 #upcard-zone { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; opacity: 0; transition: opacity 0.4s; }
@@ -161,253 +171,330 @@ body {
 @keyframes dealIn { from { opacity: 0; transform: scale(0.6) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 .card.dealing { animation: dealIn 0.3s ease forwards; }
 
-/* ─── LOBBY SCREEN ─── */
-#lobby {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-  z-index: 400; align-items: center; justify-content: center;
-}
-#lobby.open { display: flex; }
-#lobby-box {
-  background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%);
-  border: 2px solid var(--gold); border-radius: 18px;
-  padding: 32px 36px; max-width: 480px; width: 94%;
-  box-shadow: 0 0 60px rgba(0,0,0,0.95), 0 0 30px rgba(201,168,76,0.2);
-  text-align: center;
-}
-#lobby-box h2 { font-family: 'Playfair Display', serif; color: var(--gold-bright); font-size: 1.6rem; letter-spacing: 2px; margin-bottom: 4px; }
-#lobby-box .subtitle { font-family: 'Crimson Text', serif; font-style: italic; color: var(--gold-dim); font-size: 0.9rem; margin-bottom: 24px; }
-.lobby-section { margin: 16px 0; }
-.lobby-section h3 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1rem; margin-bottom: 10px; }
-.lobby-input {
-  width: 100%; padding: 10px 14px; font-family: 'Playfair Display', serif;
-  font-size: 1rem; background: rgba(0,0,0,0.5); color: var(--cream);
-  border: 1px solid var(--gold-dim); border-radius: 8px; text-align: center;
-  letter-spacing: 2px; margin-bottom: 8px;
-}
-.lobby-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.3); }
-.lobby-btn {
-  font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1rem;
-  padding: 12px 24px; border-radius: 10px; cursor: pointer; border: none;
-  width: 100%; margin: 6px 0; transition: all 0.15s; min-height: 48px;
-}
-.lobby-btn-primary { background: radial-gradient(circle at 40% 30%, #d4aa50, #8B6914); color: #1a0e00; }
-.lobby-btn-primary:hover { transform: scale(1.02); background: radial-gradient(circle at 40% 30%, #e8c060, #a07a20); }
-.lobby-btn-secondary { background: rgba(255,255,255,0.07); color: var(--cream); border: 1px solid var(--gold-dim) !important; }
-.lobby-btn-secondary:hover { background: rgba(255,255,255,0.12); }
-.lobby-divider { color: var(--gold-dim); font-style: italic; margin: 12px 0; font-size: 0.85rem; }
+/* ═══════════════════════════════════════════════════════════
+   LOBBY STYLES (shared desktop+mobile)
+═══════════════════════════════════════════════════════════ */
+#lobby { display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 400; align-items: center; justify-content: center; }
+#lbox { background: linear-gradient(160deg,#1c4a2c 0%,#0e2718 100%); border: 2px solid #c9a84c; border-radius: 18px; padding: 28px 32px; max-width: 520px; width: 94%; box-shadow: 0 0 60px rgba(0,0,0,0.95); text-align: center; max-height: 90vh; overflow-y: auto; }
+.scr { display: none; }
+.scr.active { display: block; }
+.ltitle { font-family: 'Playfair Display', serif; color: #f0cc70; font-size: 1.6rem; letter-spacing: 2px; margin-bottom: 2px; }
+.lsub { font-style: italic; color: #7a5e22; font-size: 0.88rem; margin-bottom: 22px; }
+.linput { width: 100%; padding: 11px 14px; font-family: 'Playfair Display', serif; font-size: 1rem; background: rgba(0,0,0,0.5); color: #f5edd6; border: 1px solid #7a5e22; border-radius: 8px; text-align: center; margin-bottom: 10px; outline: none; box-sizing: border-box; }
+.linput:focus { border-color: #c9a84c; }
+.lbtn { display: block; width: 100%; padding: 12px; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1rem; border-radius: 10px; cursor: pointer; border: none; margin: 5px 0; }
+.lbtn-gold { background: linear-gradient(135deg,#d4aa50,#8B6914); color: #1a0e00; }
+.lbtn-dim { background: rgba(255,255,255,0.08); color: #f5edd6; border: 1px solid #7a5e22 !important; }
+.lerr { color: #ff7070; font-size: 0.85rem; min-height: 18px; margin-top: 4px; }
+.tcard { background: rgba(0,0,0,0.35); border: 1px solid #7a5e22; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; text-align: left; }
+.tname { font-family: 'Playfair Display', serif; color: #f0cc70; font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.tbadge { font-family: 'Crimson Text', serif; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-style: italic; }
+.b-empty { background: rgba(201,168,76,0.1); color: #7a5e22; border: 1px solid rgba(201,168,76,0.2); }
+.b-wait { background: rgba(90,224,90,0.12); color: #5ae05a; border: 1px solid rgba(90,224,90,0.25); }
+.b-play { background: rgba(255,150,50,0.12); color: #ffaa55; border: 1px solid rgba(255,150,50,0.25); }
+.sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stile { border-radius: 8px; border: 1px solid #7a5e22; padding: 8px 10px; cursor: pointer; transition: all 0.15s; background: rgba(0,0,0,0.3); text-align: center; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.stile:hover:not(.tk):not(.me) { border-color: #c9a84c; background: rgba(201,168,76,0.1); }
+.stile.tk { opacity: 0.45; cursor: default; }
+.stile.me { border-color: #f0cc70; background: rgba(201,168,76,0.18); cursor: default; }
+.spos { color: #c9a84c; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Crimson Text', serif; }
+.swho { color: #f5edd6; font-size: 0.88rem; font-family: 'Crimson Text', serif; font-weight: 600; }
+.swho.ai { color: #7a5e22; font-style: italic; }
+.sopen { color: rgba(90,224,90,0.85); font-size: 0.82rem; font-family: 'Crimson Text', serif; }
+.plist { list-style: none; text-align: left; margin: 10px 0; }
+.plist li { padding: 5px 10px; margin: 3px 0; border-radius: 6px; background: rgba(0,0,0,0.3); font-family: 'Crimson Text', serif; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+.pdot { width: 8px; height: 8px; border-radius: 50%; background: #5ae05a; flex-shrink: 0; }
+.pdot.ai { background: rgba(201,168,76,0.4); }
+#debug { position: fixed; bottom: calc(10px + var(--safe-bottom)); right: 10px; background: rgba(0,0,0,0.8); color: #5ae05a; font-size: 0.7rem; padding: 6px 10px; border-radius: 6px; max-width: 300px; word-break: break-all; z-index: 999; display: none; }
 
-/* Seat selection inside lobby */
-#seat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-.seat-btn {
-  padding: 12px 8px; border-radius: 10px; border: 2px solid var(--gold-dim);
-  background: rgba(0,0,0,0.4); color: var(--cream); cursor: pointer;
-  font-family: 'Playfair Display', serif; font-size: 0.85rem; font-weight: 700;
-  transition: all 0.15s; min-height: 60px;
-}
-.seat-btn:hover:not(:disabled) { border-color: var(--gold); background: rgba(201,168,76,0.1); }
-.seat-btn.taken { opacity: 0.4; cursor: not-allowed; }
-.seat-btn.mine { border-color: var(--gold-bright); background: rgba(201,168,76,0.2); color: var(--gold-bright); }
-.seat-name { font-size: 0.72rem; display: block; margin-top: 3px; color: var(--gold-dim); }
-.seat-name.filled { color: var(--gold); }
 
-/* Waiting room */
-#waiting-room { margin-top: 16px; }
-.player-list { list-style: none; margin: 8px 0; }
-.player-list li { padding: 6px 12px; margin: 4px 0; border-radius: 6px; background: rgba(0,0,0,0.3); font-family: 'Crimson Text', serif; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-.player-dot { width: 8px; height: 8px; border-radius: 50%; background: #5ae05a; flex-shrink: 0; }
-.ai-dot { background: rgba(201,168,76,0.5); }
-#lobby-status { font-family: 'Crimson Text', serif; font-style: italic; color: var(--gold-dim); font-size: 0.85rem; margin: 8px 0; min-height: 20px; }
-#room-code-display { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold-bright); letter-spacing: 2px; margin: 8px 0; }
-
-/* ─── TABLE CARDS ─── */
-#tables-grid { display: flex; flex-direction: column; gap: 12px; }
-.table-card {
-  background: rgba(0,0,0,0.35);
-  border: 1px solid var(--gold-dim);
-  border-radius: 12px;
-  padding: 14px 16px;
-  text-align: left;
-  transition: border-color 0.15s;
-}
-.table-card:hover { border-color: var(--gold); }
-.table-card-header {
-  font-family: 'Playfair Display', serif;
-  color: var(--gold-bright);
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.table-status-badge {
-  font-family: 'Crimson Text', serif;
-  font-size: 0.72rem;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-style: italic;
-  font-weight: 400;
-}
-.badge-waiting { background: rgba(90,224,90,0.15); color: #5ae05a; border: 1px solid rgba(90,224,90,0.3); }
-.badge-playing { background: rgba(255,150,50,0.15); color: #ffaa55; border: 1px solid rgba(255,150,50,0.3); }
-.badge-empty { background: rgba(201,168,76,0.1); color: var(--gold-dim); border: 1px solid rgba(201,168,76,0.2); }
-.seats-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.seat-tile {
-  border-radius: 8px;
-  border: 1px solid var(--gold-dim);
-  padding: 8px 10px;
-  font-family: 'Crimson Text', serif;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  background: rgba(0,0,0,0.3);
-  text-align: center;
-  min-height: 52px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.seat-tile:hover:not(.seat-taken):not(.seat-mine) {
-  border-color: var(--gold);
-  background: rgba(201,168,76,0.12);
-  transform: scale(1.02);
-}
-.seat-tile.seat-taken {
-  opacity: 0.5;
-  cursor: default;
-}
-.seat-tile.seat-mine {
-  border-color: var(--gold-bright);
-  background: rgba(201,168,76,0.18);
-  cursor: default;
-}
-.seat-pos { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
-.seat-occupant { color: var(--cream); font-weight: 600; font-size: 0.88rem; }
-.seat-occupant.is-ai { color: var(--gold-dim); font-style: italic; }
-.seat-open { color: rgba(90,224,90,0.8); font-size: 0.82rem; }
-@media (max-width: 600px) {
-  .game-title { font-size: 1.1rem; } #info-strip { gap: 4px; } .info-pill .pill-label { font-size: 0.55rem; } .info-pill .pill-val { font-size: 0.8rem; } #msg-bar { font-size: 0.78rem; } #lobby-box { padding: 20px 16px; }
-}
-
-/* Lobby */
-#lobby{display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:400;align-items:center;justify-content:center;}
-#lbox{background:linear-gradient(160deg,#1c4a2c 0%,#0e2718 100%);border:2px solid #c9a84c;border-radius:18px;padding:28px 32px;max-width:520px;width:94%;box-shadow:0 0 60px rgba(0,0,0,0.95);text-align:center;}
-.scr{display:none;}.scr.active{display:block;}
-.ltitle{font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.6rem;letter-spacing:2px;margin-bottom:2px;}
-.lsub{font-style:italic;color:#7a5e22;font-size:0.88rem;margin-bottom:22px;}
-.linput{width:100%;padding:11px 14px;font-family:'Playfair Display',serif;font-size:1rem;background:rgba(0,0,0,0.5);color:#f5edd6;border:1px solid #7a5e22;border-radius:8px;text-align:center;margin-bottom:10px;outline:none;box-sizing:border-box;}
-.linput:focus{border-color:#c9a84c;}
-.lbtn{display:block;width:100%;padding:12px;font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;border-radius:10px;cursor:pointer;border:none;margin:5px 0;}
-.lbtn-gold{background:linear-gradient(135deg,#d4aa50,#8B6914);color:#1a0e00;}
-.lbtn-dim{background:rgba(255,255,255,0.08);color:#f5edd6;border:1px solid #7a5e22!important;}
-.lerr{color:#ff7070;font-size:0.85rem;min-height:18px;margin-top:4px;}
-.tcard{background:rgba(0,0,0,0.35);border:1px solid #7a5e22;border-radius:12px;padding:14px 16px;margin-bottom:12px;text-align:left;}
-.tname{font-family:'Playfair Display',serif;color:#f0cc70;font-size:1.05rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.tbadge{font-family:'Crimson Text',serif;font-size:0.72rem;padding:2px 8px;border-radius:10px;font-style:italic;}
-.b-empty{background:rgba(201,168,76,0.1);color:#7a5e22;border:1px solid rgba(201,168,76,0.2);}
-.b-wait{background:rgba(90,224,90,0.12);color:#5ae05a;border:1px solid rgba(90,224,90,0.25);}
-.b-play{background:rgba(255,150,50,0.12);color:#ffaa55;border:1px solid rgba(255,150,50,0.25);}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.stile{border-radius:8px;border:1px solid #7a5e22;padding:8px 10px;cursor:pointer;transition:all 0.15s;background:rgba(0,0,0,0.3);text-align:center;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
-.stile:hover:not(.tk):not(.me){border-color:#c9a84c;background:rgba(201,168,76,0.1);}
-.stile.tk{opacity:0.45;cursor:default;}.stile.me{border-color:#f0cc70;background:rgba(201,168,76,0.18);cursor:default;}
-.spos{color:#c9a84c;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;font-family:'Crimson Text',serif;}
-.swho{color:#f5edd6;font-size:0.88rem;font-family:'Crimson Text',serif;font-weight:600;}
-.swho.ai{color:#7a5e22;font-style:italic;}
-.sopen{color:rgba(90,224,90,0.85);font-size:0.82rem;font-family:'Crimson Text',serif;}
-.plist{list-style:none;text-align:left;margin:10px 0;}
-.plist li{padding:5px 10px;margin:3px 0;border-radius:6px;background:rgba(0,0,0,0.3);font-family:'Crimson Text',serif;font-size:0.95rem;display:flex;align-items:center;gap:8px;}
-.pdot{width:8px;height:8px;border-radius:50%;background:#5ae05a;flex-shrink:0;}
-.pdot.ai{background:rgba(201,168,76,0.4);}
-#debug{position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:#5ae05a;font-size:0.7rem;padding:6px 10px;border-radius:6px;max-width:300px;word-break:break-all;z-index:999;}
-
-/* ── MOBILE LAYOUT (≤700px) ── */
+/* ═══════════════════════════════════════════════════════════
+   ███ MOBILE APP LAYOUT (≤700px) ███
+═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
+
+  /* App shell */
   html, body {
-    height: 100%; height: 100dvh;
+    height: 100dvh;
     overflow: hidden;
-    margin: 0; padding: 0;
+    position: fixed;
+    width: 100%;
   }
 
-  /* Hide desktop scaler entirely on mobile */
+  body { padding: 0; }
+
+  /* Hide desktop scaler entirely */
   #game-scaler { display: none !important; }
 
-  /* Full-screen mobile board */
+  /* ── MOBILE BOARD: True full-screen app layout ── */
   #mobile-board {
     display: flex !important;
     flex-direction: column;
-    width: 100vw;
+    width: 100%;
     height: 100dvh;
     background: radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
     position: relative;
     overflow: hidden;
+    /* Felt texture overlay */
   }
 
-  .mb-header {
-    text-align: center;
-    padding: 4px 0 2px;
+  #mobile-board::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 6px),
+      repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 6px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── APP TOP BAR ── */
+  .mb-topbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--safe-top) + 6px) 12px 6px;
+    background: rgba(0,0,0,0.55);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 10;
+    position: relative;
+  }
+
+  .mb-topbar-title {
     font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 0.82rem;
     color: var(--gold);
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    flex-shrink: 0;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
-  /* 5-row grid: north, sides+center, south, info, msg */
-  .mb-north { display: flex; justify-content: center; align-items: flex-start; padding: 4px 10px; flex-shrink: 0; gap: 6px; }
-  .mb-middle { display: flex; flex: 1; min-height: 0; align-items: center; padding: 0 4px; gap: 4px; }
-  .mb-west { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
-  .mb-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; position: relative; }
-  .mb-east { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
-  .mb-south { display: flex; justify-content: center; align-items: flex-end; padding: 4px 10px; flex-shrink: 0; gap: 6px; }
-
-  .mb-info {
-    display: flex; flex-shrink: 0;
-    background: rgba(0,0,0,0.7);
-    border-top: 1px solid rgba(201,168,76,0.3);
-    padding: 3px 4px; gap: 2px; align-items: center;
+  .mb-topbar-scores {
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
-  .mb-info .info-pill {
-    flex: 1; padding: 2px 3px; font-size: 0.55rem;
+
+  .mb-score-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: rgba(0,0,0,0.4);
-    border: 1px solid var(--gold-dim);
-    border-radius: 5px; text-align: center; min-width: 0;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    padding: 2px 8px;
+    min-width: 42px;
   }
-  .mb-info .pill-label { font-size: 0.45rem; display: block; }
-  .mb-info .pill-val { font-size: 0.8rem; font-weight: 700; }
-  .mb-info .btn-new, .mb-info .btn-help { padding: 4px 6px; font-size: 0.6rem; flex-shrink: 0; }
-
-  .mb-msg {
-    flex-shrink: 0;
-    background: rgba(0,0,0,0.85);
-    border-top: 1px solid rgba(201,168,76,0.2);
-    padding: 7px 12px;
-    font-family: 'Crimson Text', serif;
-    font-style: italic;
+  .mb-score-chip.winning {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.12);
+  }
+  .mb-score-chip .chip-lbl {
+    font-size: 0.45rem;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .mb-score-chip .chip-val {
+    font-family: 'Playfair Display', serif;
     font-size: 1rem;
-    color: var(--cream);
-    text-align: center;
-    min-height: 36px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1.1;
+  }
+  .mb-score-chip .chip-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  .mb-score-chip .chip-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.5s ease;
   }
 
-  /* Cards on mobile */
-  .mb-card {
-    width: 52px; height: 76px; border-radius: 6px;
-    background: var(--cream);
-    border: 1px solid rgba(255,255,255,0.3);
-    display: flex; flex-direction: column; justify-content: space-between;
-    padding: 3px 4px;
-    font-family: 'Playfair Display', serif; font-size: 0.8rem; font-weight: 700;
-    cursor: pointer; user-select: none; flex-shrink: 0;
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
-    transition: transform 0.12s, box-shadow 0.12s;
+  .mb-topbar-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
   }
+  .mb-trump-badge {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold-bright);
+    white-space: nowrap;
+  }
+  .mb-trump-badge.has-trump { border-color: var(--gold); }
+  .mb-menu-btn {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 1rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    min-width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── PLAYER ZONES ── */
+  .mb-north {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 8px 3px;
+    gap: 3px;
+    z-index: 5;
+    position: relative;
+  }
+
+  .mb-middle {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+    padding: 0;
+    position: relative;
+    z-index: 5;
+  }
+
+  .mb-west {
+    width: 72px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .mb-east {
+    width: 72px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .mb-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+    min-width: 0;
+  }
+
+  .mb-south {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3px 8px 6px;
+    gap: 3px;
+    z-index: 5;
+    position: relative;
+  }
+
+  /* ── PLAYER LABELS ── */
+  .mb-player-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(201,168,76,0.8);
+    background: rgba(0,0,0,0.5);
+    padding: 2px 7px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 90px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border: 1px solid transparent;
+    letter-spacing: 0.03em;
+  }
+  .mb-player-label.is-you {
+    color: #f0cc70;
+    border-color: rgba(240,204,112,0.4);
+    background: rgba(0,0,0,0.65);
+  }
+  .mb-player-label.is-active {
+    animation: activePulse 1.2s ease-in-out infinite;
+    border-color: rgba(255,224,102,0.6);
+    color: #ffe066;
+  }
+  @keyframes activePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,224,102,0); }
+    50% { box-shadow: 0 0 0 3px rgba(255,224,102,0.3); }
+  }
+
+  .mb-dealer-chip {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--gold); color: #1a0f00;
+    font-size: 0.55rem; font-weight: 900;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+
+  .mb-player-row { display: flex; align-items: center; gap: 4px; }
+
+  /* ── APP CARDS ── */
+  .mb-card {
+    width: 48px;
+    height: 70px;
+    border-radius: 6px;
+    background: var(--cream);
+    border: 1px solid rgba(255,255,255,0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px 3px;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    user-select: none;
+    flex-shrink: 0;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.5);
+    transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.12s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .mb-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .mb-card .mc-top { line-height: 1; font-size: 0.78rem; }
+  .mb-card .mc-mid { text-align: center; font-size: 1.1rem; line-height: 1; align-self: center; }
+  .mb-card .mc-bot { line-height: 1; font-size: 0.78rem; transform: rotate(180deg); }
   .mb-card.red { color: var(--red-card); }
   .mb-card.black { color: var(--black-card); }
   .mb-card.back {
@@ -416,57 +503,425 @@ body {
   }
   .mb-card.mystery-back {
     background: repeating-linear-gradient(45deg,var(--mystery-back-b),var(--mystery-back-b) 4px,var(--mystery-back-a) 4px,var(--mystery-back-a) 8px);
+    border: 2px solid rgba(201,168,76,0.5);
+    box-shadow: 0 0 10px rgba(150,100,240,0.4), 2px 3px 8px rgba(0,0,0,0.5);
   }
+
+  /* Playable card glow */
   .mb-card.playable {
-    box-shadow: 0 0 0 2px #f0cc70, 0 0 10px rgba(240,204,112,0.7);
-    transform: translateY(-5px);
+    box-shadow: 0 0 0 2.5px #f0cc70, 0 0 12px rgba(240,204,112,0.7), 2px 3px 8px rgba(0,0,0,0.5);
+    transform: translateY(-6px);
+    cursor: pointer;
+    z-index: 20;
   }
-  .mb-card.trump-card { box-shadow: 0 0 0 2px #e8a020, 0 0 8px rgba(232,160,32,0.5); }
-
-  .mb-mystery-label { font-size: 0.55rem; color: var(--gold-dim); margin-top: 1px; text-align: center; }
-
-  .mb-player-label {
-    font-family: 'Playfair Display', serif;
-    font-size: 0.7rem; color: rgba(201,168,76,0.9);
-    background: rgba(0,0,0,0.6);
-    padding: 2px 8px; border-radius: 10px;
-    text-align: center; max-width: 90px; overflow: hidden;
-    white-space: nowrap; text-overflow: ellipsis;
-  }
-  .mb-player-label.is-you { color: #f0cc70; border: 1px solid rgba(240,204,112,0.4); }
-  .mb-dealer-chip {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--gold); color: #1a0f00;
-    font-size: 0.6rem; font-weight: 900;
-    display: flex; align-items: center; justify-content: center;
+  .mb-card.playable:active {
+    transform: translateY(-2px) scale(0.95);
+    box-shadow: 0 0 0 2px #f0cc70, 0 0 6px rgba(240,204,112,0.5);
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
   }
 
-  /* Center trick display */
-  .mb-trick { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .mb-trick-row { display: flex; gap: 4px; justify-content: center; align-items: center; }
+  /* Trump card indicator */
+  .mb-card.trump-card {
+    box-shadow: 0 0 0 2px rgba(232,160,32,0.8), 0 0 8px rgba(232,160,32,0.4), 2px 3px 8px rgba(0,0,0,0.5);
+  }
+  .mb-card.trump-card.playable {
+    box-shadow: 0 0 0 2.5px #f0cc70, 0 0 14px rgba(232,160,32,0.8), 0 0 22px rgba(240,204,112,0.4);
+  }
 
-  /* Action panel on mobile */
+  /* Card played in trick - lands with animation */
+  .mb-card.trick-card {
+    animation: cardLand 0.2s cubic-bezier(0.22,1,0.36,1) forwards;
+  }
+  @keyframes cardLand {
+    from { transform: scale(1.15) translateY(-8px); opacity: 0.7; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  /* ── TRICK AREA CENTER ── */
+  .mb-trick-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+  }
+  .mb-trick-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+  }
+  .mb-trick-slot {
+    width: 50px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px dashed rgba(201,168,76,0.2);
+  }
+  .mb-trick-slot:has(.mb-card) { border-color: transparent; }
+
+  /* Center felt circle */
+  .mb-center-deco {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(201,168,76,0.12);
+    font-size: 1.4rem;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Upcard display */
+  .mb-upcard-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .mb-upcard-lbl {
+    font-size: 0.5rem;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Mystery label */
+  .mb-mystery-label {
+    font-size: 0.5rem;
+    color: var(--gold-dim);
+    margin-top: 1px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── INFO BAR (below board) ── */
+  .mb-info-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.65);
+    border-top: 1px solid rgba(201,168,76,0.2);
+  }
+  .mb-info-bar .info-pill {
+    flex: 1;
+    padding: 3px 4px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px;
+    text-align: center;
+    min-width: 0;
+  }
+  .mb-info-bar .pill-label { font-size: 0.42rem; text-transform: uppercase; letter-spacing: 0.5px; display: block; color: var(--gold-dim); }
+  .mb-info-bar .pill-val { font-size: 0.78rem; font-weight: 700; color: var(--gold-bright); font-family: 'Playfair Display', serif; }
+
+  /* ── MESSAGE BAR ── */
+  .mb-msg-bar {
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.8);
+    border-top: 1px solid rgba(201,168,76,0.15);
+    padding: 8px 14px calc(8px + var(--safe-bottom));
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--cream);
+    text-align: center;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+    position: relative;
+    z-index: 6;
+  }
+  .mb-msg-bar.your-turn {
+    background: rgba(0,40,0,0.9);
+    color: #a8ffb0;
+    border-top-color: rgba(100,200,100,0.3);
+  }
+  .mb-msg-bar.your-turn::before {
+    content: '▶ ';
+    color: #5ae05a;
+    font-style: normal;
+    font-size: 0.6rem;
+    margin-right: 3px;
+    vertical-align: middle;
+  }
+
+  /* ── BOTTOM SHEET ACTION PANEL ── */
   #action-panel {
-    position: fixed !important; bottom: 0; left: 0; right: 0; z-index: 500;
-    width: 100% !important; border-radius: 16px 16px 0 0;
-    max-height: 55vh; overflow-y: auto;
-    padding: 14px 12px 20px !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 500 !important;
+    border-radius: 20px 20px 0 0 !important;
+    border: none !important;
+    border-top: 2px solid var(--gold) !important;
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+    padding: 0 0 calc(16px + var(--safe-bottom)) !important;
+    display: none !important;
+    background: linear-gradient(170deg, #1a4428 0%, #0c2012 100%) !important;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.8), 0 -2px 0 rgba(201,168,76,0.3) !important;
+
+    /* Sheet handle */
+    padding-top: 20px !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1) !important;
   }
-  #action-panel h2 { font-size: 1.1rem !important; }
-  #action-panel p { font-size: 0.9rem !important; }
-  .mbtn { font-size: 0.85rem !important; padding: 11px 10px !important; min-height: 44px; }
-  .btn-row { gap: 6px; flex-wrap: wrap; justify-content: center; }
 
-  /* Info strip and msg bar - shown in mobile-board, hide desktop versions */
+  #action-panel.open {
+    display: block !important;
+    transform: translateY(0) !important;
+  }
+
+  /* Sheet handle pill */
+  #action-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: rgba(201,168,76,0.4);
+    border-radius: 2px;
+  }
+
+  #action-panel h2 {
+    font-family: 'Playfair Display', serif !important;
+    color: var(--gold-bright) !important;
+    font-size: 1.05rem !important;
+    margin-bottom: 6px !important;
+    letter-spacing: 0.5px !important;
+    padding: 0 16px !important;
+    text-align: center !important;
+  }
+
+  #action-panel > * { padding-left: 14px !important; padding-right: 14px !important; }
+
+  #action-panel p {
+    font-family: 'Crimson Text', serif !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    color: var(--cream) !important;
+    margin-bottom: 4px !important;
+    text-align: center !important;
+    padding: 0 16px !important;
+  }
+
+  #action-panel .btn-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    margin-top: 10px !important;
+    padding: 0 14px !important;
+  }
+
+  .mbtn {
+    font-size: 0.88rem !important;
+    padding: 12px 14px !important;
+    min-height: 48px !important;
+    border-radius: 12px !important;
+    flex: 1 1 auto !important;
+    min-width: 80px !important;
+    max-width: calc(50% - 4px) !important;
+  }
+  .mbtn:active {
+    transform: scale(0.96) !important;
+    opacity: 0.9 !important;
+  }
+  .mbtn-discard {
+    min-width: 58px !important;
+    max-width: calc(50% - 4px) !important;
+    padding: 10px 8px !important;
+    font-size: 1rem !important;
+  }
+
+  /* ── WINNER FLASH TOAST ── */
+  #mobile-winner-toast {
+    position: fixed;
+    top: calc(var(--safe-top) + 60px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(10,40,15,0.95);
+    color: var(--gold-bright);
+    padding: 10px 22px;
+    border-radius: 30px;
+    border: 1px solid var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    z-index: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 20px rgba(201,168,76,0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+  #mobile-winner-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── OVERLAY MODAL ── */
+  #overlay { z-index: 600; }
+  #overlay.open { display: flex; }
+  #modal-box {
+    width: calc(100% - 32px) !important;
+    max-width: 360px !important;
+    padding: 24px 20px !important;
+    border-radius: 20px !important;
+  }
+
+  /* ── LOBBY MOBILE ── */
+  #lobby {
+    padding: var(--safe-top) 0 var(--safe-bottom);
+    align-items: flex-end;
+    background: rgba(0,0,0,0.95);
+  }
+  #lbox {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 20px calc(24px + var(--safe-bottom));
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    max-height: 88vh;
+  }
+
+  /* ── INFO STRIP / MSG BAR - hidden in mobile (replaced) ── */
   #info-strip, #msg-bar { display: none !important; }
-}
 
+  /* ── MENU OVERLAY ── */
+  #mb-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 480;
+    display: none;
+  }
+  #mb-menu-overlay.open { display: block; }
+
+  #mb-menu-sheet {
+    position: fixed;
+    top: calc(var(--safe-top) + 48px);
+    right: 10px;
+    background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 14px;
+    padding: 8px;
+    z-index: 490;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    display: none;
+    min-width: 160px;
+    animation: menuSlideIn 0.15s ease;
+  }
+  #mb-menu-sheet.open { display: block; }
+  @keyframes menuSlideIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-8px); transform-origin: top right; }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .mb-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.9rem;
+    color: var(--cream);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .mb-menu-item:active { background: rgba(255,255,255,0.08); }
+  .mb-menu-item .mi-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .mb-menu-divider { height: 1px; background: rgba(201,168,76,0.15); margin: 4px 8px; }
+
+  /* ── RULES SHEET ── */
+  #mb-rules-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 550;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: flex-end;
+  }
+  #mb-rules-sheet.open { display: flex; }
+  #mb-rules-content {
+    background: linear-gradient(160deg, #1c4a2c 0%, #0e2718 100%);
+    border: 1px solid var(--gold-dim);
+    border-radius: 20px 20px 0 0;
+    border-top: 2px solid var(--gold);
+    padding: 24px 18px calc(20px + var(--safe-bottom));
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 100%;
+  }
+  #mb-rules-content h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold-bright);
+    font-size: 1rem;
+    margin: 12px 0 6px;
+  }
+  #mb-rules-content p, #mb-rules-content div {
+    font-family: 'Crimson Text', serif;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--cream);
+  }
+  #mb-rules-content .gold { color: var(--gold); font-weight: 600; }
+  .mb-rules-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+} /* end @media mobile */
+
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP HIDE / SHOW
+═══════════════════════════════════════════════════════════ */
 @media (min-width: 701px) {
   #mobile-board { display: none !important; }
+  #mb-menu-overlay, #mb-menu-sheet, #mb-rules-sheet, #mobile-winner-toast { display: none !important; }
 }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════
+     DESKTOP BOARD (hidden on mobile)
+═══════════════════════════════════════════ -->
 <div id="game-scaler">
 <div class="game-header">
   <div class="game-title">THIS GAME IS STUPID</div>
@@ -520,27 +975,70 @@ body {
   </div>
 </div>
 </div><!-- game-scaler -->
-<!-- MOBILE BOARD (shown on ≤700px screens) -->
+
+<!-- ═══════════════════════════════════════════
+     MOBILE BOARD APP (shown on ≤700px)
+═══════════════════════════════════════════ -->
 <div id="mobile-board" style="display:none;">
-  <div class="mb-header">THIS GAME IS STUPID</div>
+
+  <!-- Top App Bar -->
+  <div class="mb-topbar">
+    <div class="mb-topbar-scores">
+      <div class="mb-score-chip" id="mb-chip-us">
+        <span class="chip-lbl" id="mb-chip-us-lbl">Us</span>
+        <span class="chip-val" id="mb-score-us">0</span>
+        <div class="chip-bar"><div class="chip-fill" id="mb-fill-us" style="width:0%"></div></div>
+      </div>
+      <div style="color:var(--gold-dim);font-size:0.6rem;font-family:'Playfair Display',serif;">vs</div>
+      <div class="mb-score-chip" id="mb-chip-them">
+        <span class="chip-lbl" id="mb-chip-them-lbl">Them</span>
+        <span class="chip-val" id="mb-score-them">0</span>
+        <div class="chip-bar"><div class="chip-fill" id="mb-fill-them" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="mb-topbar-title">TGIS</div>
+
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="mb-trump-badge" id="mb-trump-badge">—</div>
+      <button class="mb-menu-btn" id="mb-menu-btn" onclick="mbToggleMenu()">☰</button>
+    </div>
+  </div>
+
+  <!-- North Player -->
   <div class="mb-north" id="mb-north"></div>
+
+  <!-- Middle: West | Center | East -->
   <div class="mb-middle">
     <div class="mb-west" id="mb-west"></div>
-    <div class="mb-center" id="mb-center"></div>
+    <div class="mb-center" id="mb-center">
+      <div class="mb-center-deco">♠</div>
+    </div>
     <div class="mb-east" id="mb-east"></div>
   </div>
-  <div class="mb-south" id="mb-south"></div>
-  <div class="mb-info" id="mb-info">
-    <div class="info-pill"><span class="pill-label" id="mb-score-us-label">Us</span><span class="pill-val" id="mb-score-us">0</span><span style="font-size:0.45rem">/10</span></div>
-    <div class="info-pill"><span class="pill-label" id="mb-score-them-label">Them</span><span class="pill-val" id="mb-score-them">0</span><span style="font-size:0.45rem">/10</span></div>
-    <div class="info-pill"><span class="pill-label">Trump</span><span class="pill-val" id="mb-trump">—</span></div>
-    <div class="info-pill"><span class="pill-label">Made by</span><span class="pill-val" id="mb-maker">—</span></div>
-    <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="mb-tricks">—</span></div>
-    <button class="btn-new" onclick="window.showLobby()" style="flex-shrink:0;">New</button>
-  </div>
-  <div class="mb-msg" id="mb-msg">Loading…</div>
-</div>
 
+  <!-- South Player (You) -->
+  <div class="mb-south" id="mb-south"></div>
+
+  <!-- Info Bar -->
+  <div class="mb-info-bar" id="mb-info-bar">
+    <div class="info-pill"><span class="pill-label">Maker</span><span class="pill-val" id="mb-maker">—</span></div>
+    <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="mb-tricks">—</span></div>
+    <div class="info-pill"><span class="pill-label">Phase</span><span class="pill-val" id="mb-phase">—</span></div>
+  </div>
+
+  <!-- Message Bar -->
+  <div class="mb-msg-bar" id="mb-msg">Connecting…</div>
+
+</div><!-- #mobile-board -->
+
+<!-- Winner Toast (mobile) -->
+<div id="mobile-winner-toast">—</div>
+
+<!-- Shared Action Panel (slides up on mobile, inline on desktop) -->
+<div id="action-panel"></div>
+
+<!-- Info / Msg Bar (desktop only) -->
 <div id="info-strip">
   <div class="info-pill score-pill">
     <span class="pill-label" id="score-us-label">Score · South & North</span>
@@ -560,6 +1058,37 @@ body {
 </div>
 <div id="msg-bar">Loading…</div>
 
+<!-- Menu Overlay + Sheet -->
+<div id="mb-menu-overlay" onclick="mbCloseMenu()"></div>
+<div id="mb-menu-sheet">
+  <div class="mb-menu-item" onclick="mbCloseMenu();window.showLobby()">
+    <span class="mi-icon">🃏</span> New Game
+  </div>
+  <div class="mb-menu-divider"></div>
+  <div class="mb-menu-item" onclick="mbCloseMenu();mbShowRules()">
+    <span class="mi-icon">📖</span> Rules
+  </div>
+</div>
+
+<!-- Rules Sheet (mobile) -->
+<div id="mb-rules-sheet">
+  <div id="mb-rules-content" style="position:relative;">
+    <div class="mb-rules-close" onclick="mbCloseRules()">✕</div>
+    <h3>🃏 The Mystery Card</h3>
+    <p>Each player gets 1 mystery card (blue, glowing). At any time during play, instead of following suit, you may play your mystery card. It plays as its actual rank &amp; suit — even if you have to follow suit normally.</p>
+    <p style="margin-top:8px">Once used, normal euchre rules apply for the rest of the hand.</p>
+    <h3>♠ Standard Euchre Rules</h3>
+    <p><b>Trump order:</b> Right bower (J of trump) &gt; Left bower (J same color) &gt; A &gt; K &gt; Q &gt; 10 &gt; 9</p>
+    <p style="margin-top:8px"><b>Scoring:</b> Makers need 3+ tricks = 1 pt. Sweep all 5 = 2 pts. Getting euchred = opponents get 2 pts. Go alone and win 4 tricks = 6 pts!</p>
+    <p style="margin-top:8px"><b>Open cards:</b> Each player has 2 face-up "open" cards everyone can see, and 2 face-down "secret" cards only you can see.</p>
+    <p style="margin-top:8px"><b>Stuck dealer:</b> If everyone passes in round 2, the dealer must name a trump suit.</p>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(201,168,76,0.15);font-size:0.78rem;color:rgba(201,168,76,0.5);text-align:center;font-style:italic;">
+      🃏 This Game Is Stupid was invented by <span class="gold">Greg, Tommy, Milan, Fat Kid &amp; Dave</span>.
+    </div>
+  </div>
+</div>
+
+<!-- Lobby -->
 <div id="lobby">
  <div id="lbox">
   <div class="ltitle">THIS GAME IS STUPID</div>
@@ -608,7 +1137,63 @@ body {
 
 <div id="overlay"><div id="modal-box"></div></div>
 
+<div id="debug"></div>
+
 <script>
+// ═══════════════════════════════════════════════════════════
+// MOBILE APP UTILITIES
+// ═══════════════════════════════════════════════════════════
+
+// Haptic feedback helper
+window.haptic = function haptic(type) {
+  if (!navigator.vibrate) return;
+  const patterns = {
+    tap:    [10],
+    play:   [15],
+    win:    [20, 50, 20],
+    error:  [40, 20, 40],
+    select: [8]
+  };
+  navigator.vibrate(patterns[type] || [10]);
+}
+
+// Menu sheet
+function mbToggleMenu() {
+  const sheet = document.getElementById('mb-menu-sheet');
+  const overlay = document.getElementById('mb-menu-overlay');
+  const isOpen = sheet.classList.contains('open');
+  if (isOpen) { sheet.classList.remove('open'); overlay.classList.remove('open'); }
+  else { sheet.classList.add('open'); overlay.classList.add('open'); haptic('tap'); }
+}
+function mbCloseMenu() {
+  document.getElementById('mb-menu-sheet').classList.remove('open');
+  document.getElementById('mb-menu-overlay').classList.remove('open');
+}
+function mbShowRules() {
+  document.getElementById('mb-rules-sheet').classList.add('open');
+}
+function mbCloseRules() {
+  document.getElementById('mb-rules-sheet').classList.remove('open');
+}
+
+// Winner toast
+window.mbShowWinnerToast = function(msg) {
+  const el = document.getElementById('mobile-winner-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  haptic('win');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// isMobile
+const isMobile = () => window.innerWidth <= 700;
+window.isMobile = isMobile;
+
+// ═══════════════════════════════════════════════════════════
+// ORIGINAL LOBBY SCRIPT (unchanged)
+// ═══════════════════════════════════════════════════════════
+
 const TBLS=[
   {id:'founders',    label:'♠ Founders'},
   {id:'open',        label:'♠ Open Table'},
@@ -618,159 +1203,14 @@ const SEATS=['south','west','north','east'];
 const SLBL={south:'South',north:'North',west:'West',east:'East'};
 let myName='';
 
-function dbg(msg){ console.log('[TGIS]',msg); }
+function dbg(msg){ const el=document.getElementById('debug'); if(el){el.style.display='block';el.textContent=msg;} console.log('[TGIS]',msg); }
 
 // ── MOBILE BOARD RENDERER ──
-const isMobile = () => window.innerWidth <= 700;
-window.isMobile = isMobile;
-window.mbRenderAll = () => {}; // placeholder until defined below
+// mbCard and mbRenderAll are defined inside the ES module (need access to G, mySeat, NAME, etc.)
+window.mbRenderAll = () => {}; // overwritten by module
 
-function mbCard(card, opts={}) {
-  const el = document.createElement('div');
-  if (opts.back || opts.mystery) {
-    el.className = 'mb-card ' + (opts.mystery ? 'mystery-back' : 'back');
-  } else if (card) {
-    const isRed = card.s === 'H' || card.s === 'D';
-    el.className = 'mb-card ' + (isRed ? 'red' : 'black');
-    const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
-    el.innerHTML = `<span>${card.r}${sym[card.s]||''}</span><span style="font-size:0.6em;opacity:0.6">${opts.label||''}</span>`;
-    if (opts.isTrump) el.classList.add('trump-card');
-  }
-  if (opts.playable) {
-    el.classList.add('playable');
-    el.addEventListener('click', opts.onClick);
-  }
-  return el;
-}
-
-function mbRenderAll() {
-  if (!window.isMobile || !window.isMobile() || !G || !G.phase) return;
-  const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
-  const SYM = sym;
-
-  // Update info bar
-  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-  setEl('mb-trump', G.trump ? sym[G.trump]+' '+G.trump : '—');
-  setEl('mb-maker', G.maker ? (NAME[G.maker]||G.maker) : '—');
-  setEl('mb-tricks', G.trickWins ? G.trickWins[0]+' — '+G.trickWins[1] : '—');
-  // Scores
-  if (G.scores) {
-    const myTeam = mySeat ? (mySeat==='south'||mySeat==='north' ? 0 : 1) : 0;
-    setEl('mb-score-us', G.scores[myTeam]);
-    setEl('mb-score-them', G.scores[1-myTeam]);
-    const usLbl = mySeat ? (mySeat==='south'||mySeat==='north' ? (NAME.south||'S')+' & '+(NAME.north||'N') : (NAME.west||'W')+' & '+(NAME.east||'E')) : 'Us';
-    setEl('mb-score-us-label', usLbl.length>10 ? 'Us' : usLbl);
-  }
-
-  // Render each player zone
-  const ZONES = {north:'mb-north', south:'mb-south', west:'mb-west', east:'mb-east'};
-  ALL_P.forEach(seat => {
-    const zone = document.getElementById(ZONES[seat]);
-    if (!zone) return;
-    zone.innerHTML = '';
-    const hand = G.hands && G.hands[seat] ? G.hands[seat] : [];
-    const isMe = seat === mySeat;
-    const isTurn = G.phase==='play' && G.current===seat;
-    const isDealer = seat === G.dealer;
-
-    // Name label
-    const lbl = document.createElement('div');
-    lbl.className = 'mb-player-label' + (isMe?' is-you':'');
-    lbl.textContent = (NAME[seat]||seat) + (isMe?' (You)':'') + (isDealer?' D':'');
-    zone.appendChild(lbl);
-
-    // Cards row
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;justify-content:center;';
-
-    // Mystery card
-    if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
-      const canM = isMe && isTurn && !G.mystUsed?.[seat];
-      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
-      const mWrap = document.createElement('div');
-      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
-      mWrap.appendChild(mEl);
-      const mLbl = document.createElement('div'); mLbl.className='mb-mystery-label'; mLbl.textContent='✦ mystery';
-      mWrap.appendChild(mLbl);
-      row.appendChild(mWrap);
-    }
-
-    // Hand cards
-    hand.forEach((card, i) => {
-      if (!card) return;
-      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
-      const isTrump = G.trump && (card.s===G.trump || (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump])));
-      const el = mbCard(card, {
-        isTrump,
-        label: isMe ? (i<2?'open':'secret') : '',
-        playable: canPlay,
-        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
-      });
-      if (!isMe) el.className = el.className.replace('red','').replace('black','') + ' back';
-      row.appendChild(el);
-    });
-
-    zone.appendChild(row);
-  });
-
-  // Center: upcard / trick
-  const center = document.getElementById('mb-center');
-  if (!center) return;
-  center.innerHTML = '';
-
-  if (G.phase === 'bid' || G.phase === 'discard') {
-    // Show upcard
-    if (G.upcard) {
-      const lbl = document.createElement('div');
-      lbl.style.cssText = 'font-size:0.65rem;color:var(--gold-dim);margin-bottom:3px;';
-      lbl.textContent = 'Upcard';
-      center.appendChild(lbl);
-      center.appendChild(mbCard(G.upcard, {}));
-    }
-  } else if (G.phase === 'play' || G.phase === 'resolving') {
-    // Show trick
-    const trick = G.trick || {};
-    const north = trick.north, south = trick.south, west = trick.west, east = trick.east;
-    // N
-    if (north) { const r=document.createElement('div');r.style.cssText='display:flex;justify-content:center;margin-bottom:3px;';r.appendChild(mbCard(north.card,{}));center.appendChild(r); }
-    // W + E row
-    const midRow = document.createElement('div');
-    midRow.style.cssText = 'display:flex;gap:30px;align-items:center;justify-content:center;';
-    if (west) midRow.appendChild(mbCard(west.card,{}));
-    // dealer chip
-    const chip = document.createElement('div'); chip.className='mb-dealer-chip'; chip.textContent='D'; chip.style.opacity='0.6';
-    midRow.appendChild(chip);
-    if (east) midRow.appendChild(mbCard(east.card,{}));
-    center.appendChild(midRow);
-    // S
-    if (south) { const r=document.createElement('div');r.style.cssText='display:flex;justify-content:center;margin-top:3px;';r.appendChild(mbCard(south.card,{}));center.appendChild(r); }
-  }
-}
-
-// Hook into setMsg to also update mobile msg bar
-const _origSetMsg = window.setMsg;
-function setMsg(t) {
-  const el = document.getElementById('msg-bar'); if(el) el.textContent = t;
-  const mel = document.getElementById('mb-msg'); if(mel) mel.textContent = t;
-}
-
-// Show/hide mobile board
-function updateMobileVisibility() {
-  const mb = document.getElementById('mobile-board');
-  const gs = document.getElementById('game-scaler');
-  const lobby = document.getElementById('lobby');
-  if (!mb) return;
-  const onMobile = isMobile();
-  const inGame = lobby && lobby.style.display === 'none';
-  mb.style.display = (onMobile && inGame) ? 'flex' : 'none';
-  // Keep game-scaler in DOM (needed for renderAll logic) but hide visually on mobile
-  if (gs) gs.style.visibility = (onMobile && inGame) ? 'hidden' : '';
-  if (gs) gs.style.position = (onMobile && inGame) ? 'absolute' : '';
-  if (gs) gs.style.pointerEvents = (onMobile && inGame) ? 'none' : '';
-}
-window.mbRenderAll = mbRenderAll;
-window.updateMobileVisibility = updateMobileVisibility;
-window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); mbRenderAll(); });
+// window.mbRenderAll is set inside the ES module
+// window.updateMobileVisibility assigned below after function definition
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
@@ -791,26 +1231,32 @@ document.getElementById('cont-btn').onclick=function(){
   renderTablesSkeleton();
   if(window.fbLoadTables) window.fbLoadTables();
 };
-document.getElementById('inp-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('cont-btn').click();});
-document.getElementById('back-btn').onclick=function(){showScr('name');if(window.stopTableListener)window.stopTableListener();};
-document.getElementById('reset-btn').onclick=function(){
-  if(!confirm('Reset all tables?'))return;
-  ['founders','open','lordsarcade'].forEach(id=>{if(window.fbClearTable)window.fbClearTable(id);});
-};
-document.getElementById('start-btn').onclick=function(){if(window.fbStartGame)window.fbStartGame();};
-document.getElementById('leave-btn').onclick=function(){if(window.fbLeaveSeat)window.fbLeaveSeat();};
 
-// Check for rejoin session and show banner on tables screen
-function checkRejoinBanner() {
+document.getElementById('back-btn').onclick=function(){showScr('name');};
+document.getElementById('reset-btn').onclick=function(){
+  if(window.fbClearTable){
+    TBLS.forEach(t=>window.fbClearTable(t.id));
+    document.getElementById('tbl-status').textContent='Tables reset.';
+  }
+};
+
+document.getElementById('start-btn').onclick=function(){
+  if(window.fbStartGame) window.fbStartGame();
+};
+document.getElementById('leave-btn').onclick=function(){
+  if(window.fbLeaveSeat) window.fbLeaveSeat();
+};
+
+function checkRejoinBanner(){
   try {
-    const sess = JSON.parse(localStorage.getItem('tgis_session')||'null');
-    const banner = document.getElementById('rejoin-banner');
-    if (sess && sess.name && sess.tableId && sess.seat && banner) {
-      const TNAMES = {founders:'♠ Founders', open:'♠ Open Table', lordsarcade:"♠ Lord's Arcade"};
-      document.getElementById('rejoin-banner-info').textContent =
-        sess.name + ' · ' + (TNAMES[sess.tableId]||sess.tableId) + ' · ' + (sess.seat.charAt(0).toUpperCase()+sess.seat.slice(1));
-      banner.style.display = 'block';
-      document.getElementById('rejoin-banner-btn').onclick = function() {
+    const sess=JSON.parse(localStorage.getItem('tgis_session')||'null');
+    const banner=document.getElementById('rejoin-banner');
+    if(sess&&sess.name&&sess.tableId&&sess.seat&&banner){
+      const TNAMES={founders:'♠ Founders',open:'♠ Open Table',lordsarcade:"♠ Lord's Arcade"};
+      document.getElementById('rejoin-banner-info').textContent=
+        sess.name+' · '+(TNAMES[sess.tableId]||sess.tableId)+' · '+(sess.seat.charAt(0).toUpperCase()+sess.seat.slice(1));
+      banner.style.display='block';
+      document.getElementById('rejoin-banner-btn').onclick=function(){
         myName = sess.name; window._myName = sess.name;
         document.getElementById('name-show').textContent = sess.name;
         document.getElementById('rejoin-banner-btn').textContent = 'Connecting...';
@@ -851,7 +1297,6 @@ try {
       myName = sess.name;
       window._myName = sess.name;
       document.getElementById('inp-name').value = sess.name;
-      // Wait up to 3s for Firebase module to load
       let attempts = 0;
       const tryRejoin = () => {
         if (window.fbClaimSeat) {
@@ -918,6 +1363,7 @@ function updateTableUI(tableId,data){
       tile.onclick=function(){
         const nm=window._myName||myName;
         if(!nm){showScr('name');return;}
+        haptic('select');
         if(window.fbClaimSeat)window.fbClaimSeat(tableId,s,nm);
         else dbg('Firebase not ready yet');
       };
@@ -950,14 +1396,25 @@ function updateSeatedList(data){
 }
 
 // Game helpers
-function hideLobby(){document.getElementById('lobby').style.display='none'; if(window.updateMobileVisibility)window.updateMobileVisibility(); }
-function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name'); if(window.updateMobileVisibility)window.updateMobileVisibility(); }
+function hideLobby(){
+  document.getElementById('lobby').style.display='none';
+  if(window.updateMobileVisibility)window.updateMobileVisibility();
+}
+function showLobby(){
+  document.getElementById('lobby').style.display='flex';
+  showScr('name');
+  if(window.updateMobileVisibility)window.updateMobileVisibility();
+}
 function toggleHelp(){document.getElementById('help-panel').classList.toggle('open');}
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
 function openModal(html){document.getElementById('modal-box').innerHTML=html;document.getElementById('overlay').classList.add('open');}
-function openActionPanel(html){const p=document.getElementById('action-panel');p.innerHTML=html;p.classList.add('open');}
+function openActionPanel(html){
+  const p=document.getElementById('action-panel');
+  p.innerHTML=html;
+  p.classList.add('open');
+  haptic('tap');
+}
 function closeActionPanel(){const p=document.getElementById('action-panel');p.classList.remove('open');p.innerHTML='';}
-function setMsg(t){const el=document.getElementById('msg-bar');if(el)el.textContent=t;}
 function returnToTables(){if(window.fbReturnToTables)window.fbReturnToTables();}
 function humanBidOrder(a){if(window._hBO)window._hBO(a);}
 function humanBidPass1(){if(window._hBP1)window._hBP1();}
@@ -967,10 +1424,30 @@ function humanNameSuitAlone(s){if(window._hNSA)window._hNSA(s);}
 function humanDiscard(i){if(window._hD)window._hD(i);}
 function humanStuckName(s){if(window._hSN)window._hSN(s);}
 function humanTradeKittyAction(){if(window._hTK)window._hTK();}
+
+function updateMobileVisibility() {
+  const mb = document.getElementById('mobile-board');
+  const gs = document.getElementById('game-scaler');
+  const lobby = document.getElementById('lobby');
+  if (!mb) return;
+  const onMobile = window.innerWidth <= 700;
+  const inGame = lobby && lobby.style.display === 'none';
+  if (onMobile) {
+    document.body.classList.remove('desktop-mode');
+    mb.style.display = inGame ? 'flex' : 'none';
+    if (gs) { gs.style.visibility='hidden'; gs.style.position='absolute'; gs.style.pointerEvents='none'; }
+  } else {
+    document.body.classList.add('desktop-mode');
+    mb.style.display = 'none';
+    if (gs) { gs.style.visibility=''; gs.style.position=''; gs.style.pointerEvents=''; }
+  }
+}
+window.updateMobileVisibility = updateMobileVisibility;
+
 function scaleGame(){
   const sc=document.getElementById('game-scaler');if(!sc)return;
-  // On mobile, CSS handles layout - no JS scaling needed
   if(window.innerWidth<=700){sc.style.cssText='';return;}
+  document.body.classList.add('desktop-mode');
   const gw=980,vw=window.innerWidth;
   if(vw<gw){
     const s=vw/gw;
@@ -983,7 +1460,8 @@ function scaleGame(){
     sc.style.cssText='';
   }
 }
-window.addEventListener('resize',scaleGame);setTimeout(scaleGame,50);
+window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
+setTimeout(()=>{ scaleGame(); updateMobileVisibility(); }, 50);
 </script>
 
 <script type="module">
@@ -1239,7 +1717,18 @@ function renderAll() {
   }
 }
 
-function setMsg(t) { document.getElementById('msg-bar').textContent = t; }
+function setMsg(t) {
+  const el = document.getElementById('msg-bar'); if(el) el.textContent = t;
+  const mel = document.getElementById('mb-msg'); if(mel) {
+    mel.textContent = t;
+    const isMyTurn = mySeat && G && (
+      (G.phase==='play' && G.current===mySeat) ||
+      (G.phase==='bid' && G.bidOrder && G.bidOrder[G.bidIdx]===mySeat) ||
+      (G.phase==='discard' && G.dealer===mySeat)
+    );
+    mel.classList.toggle('your-turn', !!isMyTurn);
+  }
+}
 
 function openActionPanel(html) {
   const p = document.getElementById('action-panel');
@@ -2076,8 +2565,13 @@ function renderAll_ext(){
     if(b===mySeat&&b===G.dealer)showStuckUI();
   }
   if(G.lastTrickWinner&&G.phase==='play'){
+    // Desktop flash
     const fl=document.getElementById('winner-flash');
     if(fl){fl.textContent=NAME[G.lastTrickWinner]+' wins the trick!';fl.style.display='block';setTimeout(()=>fl.style.display='none',1600);}
+    // Mobile toast
+    if(window.isMobile&&window.isMobile()&&window.mbShowWinnerToast){
+      window.mbShowWinnerToast(NAME[G.lastTrickWinner]+' wins the trick!');
+    }
   }
   if(G.phase==='gameover')showGameOver(G);
   if(G.phase==='bid'){
@@ -2157,7 +2651,194 @@ window.humanBidPass2=()=>window._hBP2&&window._hBP2();
 window.humanNameSuit=s=>window._hNS&&window._hNS(s);
 window.humanNameSuitAlone=s=>window._hNSA&&window._hNSA(s);
 
+
+// ═══════════════════════════════════════════
+// MOBILE BOARD RENDERER (inside module for G/mySeat/NAME/ALL_P/canPlayCard access)
+// ═══════════════════════════════════════════
+function mbCard(card, opts={}) {
+  const el = document.createElement('div');
+  if (opts.back || opts.mystery) {
+    el.className = 'mb-card ' + (opts.mystery ? 'mystery-back' : 'back');
+  } else if (card) {
+    const isRed = card.s === 'H' || card.s === 'D';
+    el.className = 'mb-card ' + (isRed ? 'red' : 'black');
+    if (opts.isTrump) el.classList.add('trump-card');
+    el.innerHTML = `<div class="mc-top">${card.r}${SYM[card.s]}</div><div class="mc-mid">${SYM[card.s]}</div><div class="mc-bot">${card.r}${SYM[card.s]}</div>`;
+  }
+  if (opts.playable) {
+    el.classList.add('playable');
+    el.addEventListener('touchstart', e => { e.preventDefault(); if(window.haptic) window.haptic('tap'); }, {passive:false});
+    el.addEventListener('click', () => { if(window.haptic) window.haptic('play'); opts.onClick && opts.onClick(); });
+  }
+  return el;
+}
+
+function mbRenderAll_impl() {
+  if (!window.isMobile || !window.isMobile() || !G || !G.phase) return;
+
+  // Update top bar scores
+  const myTeam = mySeat ? ((mySeat==='south'||mySeat==='north') ? 0 : 1) : 0;
+  const usScore = (G.scores||[0,0])[myTeam];
+  const themScore = (G.scores||[0,0])[1-myTeam];
+
+  const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+  setEl('mb-score-us', usScore);
+  setEl('mb-score-them', themScore);
+
+  const fillUs = document.getElementById('mb-fill-us');
+  const fillThem = document.getElementById('mb-fill-them');
+  if(fillUs) fillUs.style.width = Math.min(100, usScore*10) + '%';
+  if(fillThem) fillThem.style.width = Math.min(100, themScore*10) + '%';
+
+  const chipUs = document.getElementById('mb-chip-us');
+  const chipThem = document.getElementById('mb-chip-them');
+  if(chipUs) chipUs.classList.toggle('winning', usScore > themScore);
+  if(chipThem) chipThem.classList.toggle('winning', themScore > usScore);
+
+  // Score labels
+  const usTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
+    (NAME.south||'S')+'/'+(NAME.north||'N') :
+    (NAME.west||'W')+'/'+(NAME.east||'E')) : 'Us';
+  const themTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
+    (NAME.west||'W')+'/'+(NAME.east||'E') :
+    (NAME.south||'S')+'/'+(NAME.north||'N')) : 'Them';
+  setEl('mb-chip-us-lbl', usTeamName.length > 7 ? 'Us' : usTeamName);
+  setEl('mb-chip-them-lbl', themTeamName.length > 7 ? 'Them' : themTeamName);
+
+  // Trump badge
+  const trumpBadge = document.getElementById('mb-trump-badge');
+  if(trumpBadge) {
+    if(G.trump) {
+      trumpBadge.textContent = SYM[G.trump] + ' ' + G.trump;
+      trumpBadge.classList.add('has-trump');
+    } else {
+      trumpBadge.textContent = '\u2014';
+      trumpBadge.classList.remove('has-trump');
+    }
+  }
+
+  // Info bar
+  setEl('mb-maker', G.maker ? (NAME[G.maker]||G.maker) : '\u2014');
+  setEl('mb-tricks', G.trickWins ? G.trickWins[0]+'-'+G.trickWins[1] : '\u2014');
+  setEl('mb-phase', G.phase === 'bid' ? 'Bidding' : G.phase === 'play' ? 'Playing' : G.phase === 'discard' ? 'Discard' : (G.phase||'\u2014'));
+
+  // Render player zones
+  const ZONES = {north:'mb-north', south:'mb-south', west:'mb-west', east:'mb-east'};
+  ALL_P.forEach(seat => {
+    const zone = document.getElementById(ZONES[seat]);
+    if (!zone) return;
+    zone.innerHTML = '';
+    const hand = G.hands && G.hands[seat] ? G.hands[seat] : [];
+    const isMe = seat === mySeat;
+    const isTurn = G.phase==='play' && G.current===seat;
+    const isDealer = seat === G.dealer;
+    const isSidePlayer = seat === 'west' || seat === 'east';
+
+    // Player info row
+    const playerRow = document.createElement('div');
+    playerRow.className = 'mb-player-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'mb-player-label' + (isMe?' is-you':'') + (isTurn?' is-active':'');
+    lbl.textContent = (NAME[seat]||seat) + (isMe?' \u2736':'');
+    playerRow.appendChild(lbl);
+    if(isDealer) {
+      const d = document.createElement('div');
+      d.className = 'mb-dealer-chip';
+      d.textContent = 'D';
+      playerRow.appendChild(d);
+    }
+
+    // Cards row
+    const row = document.createElement('div');
+    row.style.cssText = isSidePlayer
+      ? 'display:flex;flex-direction:column;gap:3px;align-items:center;'
+      : 'display:flex;gap:3px;flex-wrap:nowrap;justify-content:center;align-items:flex-end;';
+
+    // Mystery card
+    if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
+      const canM = isMe && isTurn && !G.mystUsed?.[seat];
+      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
+      const mWrap = document.createElement('div');
+      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
+      mWrap.appendChild(mEl);
+      const mLbl = document.createElement('div');
+      mLbl.className = 'mb-mystery-label';
+      mLbl.textContent = '\u2736';
+      mWrap.appendChild(mLbl);
+      row.appendChild(mWrap);
+    }
+
+    // Hand cards
+    if (!Array.isArray(hand)) return;
+    hand.forEach((card, i) => {
+      if (!card) return;
+      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
+      const isTrump = G.trump && (
+        card.s===G.trump ||
+        (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump]))
+      );
+      const el = mbCard(card, {
+        isTrump,
+        playable: canPlay,
+        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
+      });
+      if (!isMe) { el.className = 'mb-card back'; }
+      row.appendChild(el);
+    });
+
+    zone.appendChild(playerRow);
+    zone.appendChild(row);
+  });
+
+  // Center: upcard or trick
+  const center = document.getElementById('mb-center');
+  if (!center) return;
+  const deco = center.querySelector('.mb-center-deco');
+  center.innerHTML = '';
+  if(deco) center.appendChild(deco);
+
+  if (G.phase === 'bid' || G.phase === 'discard') {
+    if (G.upcard) {
+      const area = document.createElement('div');
+      area.className = 'mb-upcard-area';
+      const lbl = document.createElement('div');
+      lbl.className = 'mb-upcard-lbl';
+      lbl.textContent = 'Upcard';
+      area.appendChild(lbl);
+      area.appendChild(mbCard(G.upcard, {}));
+      center.appendChild(area);
+    }
+  } else if (G.phase === 'play' || G.phase === 'resolving') {
+    const trick = G.trick || {};
+    const trickArea = document.createElement('div');
+    trickArea.className = 'mb-trick-area';
+
+    const nRow = document.createElement('div'); nRow.className = 'mb-trick-row';
+    if (trick.north) { const c=mbCard(trick.north.card,{}); c.classList.add('trick-card'); nRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; nRow.appendChild(s); }
+    trickArea.appendChild(nRow);
+
+    const mRow = document.createElement('div'); mRow.className='mb-trick-row'; mRow.style.gap='24px';
+    if (trick.west) { const c=mbCard(trick.west.card,{}); c.classList.add('trick-card'); mRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s); }
+    if (trick.east) { const c=mbCard(trick.east.card,{}); c.classList.add('trick-card'); mRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s); }
+    trickArea.appendChild(mRow);
+
+    const sRow = document.createElement('div'); sRow.className='mb-trick-row';
+    if (trick.south) { const c=mbCard(trick.south.card,{}); c.classList.add('trick-card'); sRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; sRow.appendChild(s); }
+    trickArea.appendChild(sRow);
+
+    center.appendChild(trickArea);
+  }
+}
+
+// Override the window.mbRenderAll placeholder with the real implementation
+window.mbRenderAll = mbRenderAll_impl;
+
 dbg('Module ready ✓');
+
 </script>
 </body>
 </html>
