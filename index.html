@@ -622,6 +622,8 @@ function dbg(msg){ console.log('[TGIS]',msg); }
 
 // ── MOBILE BOARD RENDERER ──
 const isMobile = () => window.innerWidth <= 700;
+window.isMobile = isMobile;
+window.mbRenderAll = () => {}; // placeholder until defined below
 
 function mbCard(card, opts={}) {
   const el = document.createElement('div');
@@ -642,7 +644,7 @@ function mbCard(card, opts={}) {
 }
 
 function mbRenderAll() {
-  if (!isMobile() || !G || !G.phase) return;
+  if (!window.isMobile || !window.isMobile() || !G || !G.phase) return;
   const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
   const SYM = sym;
 
@@ -761,8 +763,13 @@ function updateMobileVisibility() {
   const onMobile = isMobile();
   const inGame = lobby && lobby.style.display === 'none';
   mb.style.display = (onMobile && inGame) ? 'flex' : 'none';
-  if (gs) gs.style.display = (onMobile && inGame) ? 'none' : '';
+  // Keep game-scaler in DOM (needed for renderAll logic) but hide visually on mobile
+  if (gs) gs.style.visibility = (onMobile && inGame) ? 'hidden' : '';
+  if (gs) gs.style.position = (onMobile && inGame) ? 'absolute' : '';
+  if (gs) gs.style.pointerEvents = (onMobile && inGame) ? 'none' : '';
 }
+window.mbRenderAll = mbRenderAll;
+window.updateMobileVisibility = updateMobileVisibility;
 window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); mbRenderAll(); });
 
 function showScr(id){
@@ -943,8 +950,8 @@ function updateSeatedList(data){
 }
 
 // Game helpers
-function hideLobby(){document.getElementById('lobby').style.display='none'; updateMobileVisibility(); }
-function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name'); updateMobileVisibility(); }
+function hideLobby(){document.getElementById('lobby').style.display='none'; if(window.updateMobileVisibility)window.updateMobileVisibility(); }
+function showLobby(){document.getElementById('lobby').style.display='flex';showScr('name'); if(window.updateMobileVisibility)window.updateMobileVisibility(); }
 function toggleHelp(){document.getElementById('help-panel').classList.toggle('open');}
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
 function openModal(html){document.getElementById('modal-box').innerHTML=html;document.getElementById('overlay').classList.add('open');}
@@ -2058,8 +2065,8 @@ async function act(ng){
 let lastSeq=-1;
 function renderAll_ext(){
   if(!G||!G.hands)return;
-  if(isMobile()){mbRenderAll();}
-  else{renderAll();}
+  renderAll();
+  if(window.isMobile&&window.isMobile()&&window.mbRenderAll) window.mbRenderAll();
   if(G.seq===lastSeq)return;
   lastSeq=G.seq;
   if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
