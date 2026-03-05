@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>This Game Is Stupid</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -29,6 +29,7 @@ body {
   font-family: 'Crimson Text', Georgia, serif;
   color: var(--cream);
   min-height: 100vh;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -360,6 +361,39 @@ body {
   #msg-bar { font-size: 0.95rem !important; }
   #score-bar .sbar-val { font-size: 0.9rem; }
 }
+
+@media (max-width: 700px) {
+  html, body { height: 100%; overflow: hidden; }
+  #game-wrapper { overflow: hidden; }
+
+  /* Info strip and msg bar - now outside scaler, full width at bottom */
+  #info-strip {
+    width: 100% !important; margin: 0 !important;
+    padding: 3px 2px; gap: 2px;
+    background: rgba(10,30,16,0.97);
+    border-top: 1px solid rgba(201,168,76,0.35);
+    flex-wrap: nowrap;
+  }
+  .info-pill { padding: 3px 4px !important; font-size: 0.6rem !important; flex: 1 1 0; min-width: 0; }
+  .info-pill .pill-label { font-size: 0.48rem !important; }
+  .info-pill .pill-val { font-size: 0.85rem !important; }
+  .btn-new, .btn-help { padding: 4px 7px !important; font-size: 0.65rem !important; }
+
+  #msg-bar {
+    width: 100% !important; margin: 0 !important; border-radius: 0 !important;
+    font-size: 1.05rem !important; padding: 7px 12px !important;
+    background: rgba(0,0,0,0.88) !important;
+    border-left: none !important; border-right: none !important; border-bottom: none !important;
+    border-top: 1px solid rgba(201,168,76,0.25) !important;
+  }
+
+  /* Action panel on mobile - slides up from bottom */
+  #action-panel {
+    position: fixed !important; bottom: 0; left: 0; right: 0; z-index: 300;
+    border-radius: 16px 16px 0 0; max-height: 50vh; overflow-y: auto;
+    width: 100% !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -397,24 +431,7 @@ body {
   <div id="winner-flash">—</div>
 </div>
 <div id="action-panel"></div>
-<div id="info-strip">
-  <div class="info-pill score-pill">
-    <span class="pill-label" id="score-us-label">Score · South & North</span>
-    <span class="pill-val" id="score-us">0</span>
-    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
-  </div>
-  <div class="info-pill score-pill">
-    <span class="pill-label" id="score-them-label">Score · West & East</span>
-    <span class="pill-val" id="score-them">0</span>
-    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
-  </div>
-  <div class="info-pill"><span class="pill-label">Trump</span><span class="pill-val" id="trump-disp">—</span></div>
-  <div class="info-pill"><span class="pill-label">Made by</span><span class="pill-val" id="maker-disp">—</span></div>
-  <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="tricks-disp">—</span></div>
-  <button class="btn-new" onclick="window.showLobby()">New Game</button>
-  <button class="btn-help" onclick="window.toggleHelp()">Rules?</button>
-</div>
-<div id="msg-bar">Loading…</div>
+
 <div id="help-panel">
   <div class="help-cols">
     <div>
@@ -435,6 +452,24 @@ body {
 </div>
 </div><!-- game-scaler -->
 </div><!-- game-wrapper -->
+<div id="info-strip">
+  <div class="info-pill score-pill">
+    <span class="pill-label" id="score-us-label">Score · South & North</span>
+    <span class="pill-val" id="score-us">0</span>
+    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
+  </div>
+  <div class="info-pill score-pill">
+    <span class="pill-label" id="score-them-label">Score · West & East</span>
+    <span class="pill-val" id="score-them">0</span>
+    <span style="color:var(--gold-dim); font-size:0.75rem"> / 10</span>
+  </div>
+  <div class="info-pill"><span class="pill-label">Trump</span><span class="pill-val" id="trump-disp">—</span></div>
+  <div class="info-pill"><span class="pill-label">Made by</span><span class="pill-val" id="maker-disp">—</span></div>
+  <div class="info-pill"><span class="pill-label">Tricks</span><span class="pill-val" id="tricks-disp">—</span></div>
+  <button class="btn-new" onclick="window.showLobby()">New Game</button>
+  <button class="btn-help" onclick="window.toggleHelp()">Rules?</button>
+</div>
+<div id="msg-bar">Loading…</div>
 
 <div id="lobby">
  <div id="lbox">
@@ -693,15 +728,30 @@ function humanStuckName(s){if(window._hSN)window._hSN(s);}
 function humanTradeKittyAction(){if(window._hTK)window._hTK();}
 function scaleGame(){
   const sc=document.getElementById('game-scaler');if(!sc)return;
-  const gw=980,vw=window.innerWidth;
-  if(vw<gw){
+  const gw=980,gh=900;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  if(vw<700){
+    // Mobile: leave room for info-strip (~36px) and msg-bar (~42px) below
+    const reserved=82;
+    const availH=vh-reserved;
+    const sw=vw/gw, sh=availH/gh;
+    const s=Math.min(sw,sh);
+    sc.style.transform='scale('+s+')';
+    sc.style.width=gw+'px';
+    sc.style.height=gh+'px';
+    sc.style.transformOrigin='top center';
+    sc.style.marginBottom='-'+(gh*(1-s))+'px';
+    sc.style.marginLeft=((vw-gw*s)/2)+'px';
+  } else if(vw<gw){
     const s=vw/gw;
     sc.style.transform='scale('+s+')';
     sc.style.width=gw+'px';
+    sc.style.height='';
     sc.style.transformOrigin='top center';
     sc.style.marginBottom='-'+(sc.getBoundingClientRect().height/s*(1-s))+'px';
+    sc.style.marginLeft='';
   } else {
-    sc.style.transform=sc.style.width=sc.style.marginBottom=sc.style.marginLeft='';
+    sc.style.transform=sc.style.width=sc.style.height=sc.style.marginBottom=sc.style.marginLeft='';
   }
 }
 window.addEventListener('resize',scaleGame);setTimeout(scaleGame,50);
