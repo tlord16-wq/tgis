@@ -2594,8 +2594,24 @@ function mbCard(card, opts={}) {
   }
   if (opts.playable) {
     el.classList.add('playable');
-    el.addEventListener('touchstart', e => { e.preventDefault(); if(window.haptic) window.haptic('tap'); }, {passive:false});
-    el.addEventListener('click', () => { if(window.haptic) window.haptic('play'); opts.onClick && opts.onClick(); });
+    el.style.cursor = 'pointer';
+    let touchMoved = false;
+    el.addEventListener('touchstart', e => {
+      touchMoved = false;
+      if(window.haptic) window.haptic('tap');
+    }, {passive: true});
+    el.addEventListener('touchmove', () => { touchMoved = true; }, {passive: true});
+    el.addEventListener('touchend', e => {
+      if (!touchMoved) {
+        e.preventDefault();
+        if(window.haptic) window.haptic('play');
+        opts.onClick && opts.onClick();
+      }
+    }, {passive: false});
+    el.addEventListener('click', () => {
+      if(window.haptic) window.haptic('play');
+      opts.onClick && opts.onClick();
+    });
   }
   return el;
 }
@@ -2690,7 +2706,7 @@ function mbRenderAll_impl() {
       const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
       if (isSidePlayer) mEl.style.cssText = 'width:36px;height:52px;flex-shrink:0;';
       const mWrap = document.createElement('div');
-      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
+      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;z-index:10;';
       mWrap.appendChild(mEl);
       const mLbl = document.createElement('div');
       mLbl.className = 'mb-mystery-label';
