@@ -2688,9 +2688,7 @@ function mbRenderAll_impl() {
     if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
       const canM = isMe && isTurn && !G.mystUsed?.[seat];
       const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
-      if (isSidePlayer) {
-        mEl.style.cssText = 'width:36px;height:52px;margin:1px auto;';
-      }
+      if (isSidePlayer) mEl.style.cssText = 'width:36px;height:52px;flex-shrink:0;';
       const mWrap = document.createElement('div');
       mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
       mWrap.appendChild(mEl);
@@ -2701,29 +2699,34 @@ function mbRenderAll_impl() {
       row.appendChild(mWrap);
     }
 
-    // Hand cards
+    // Hand cards — cards 0-1 are "open" (visible to all), cards 2-3 are "secret" (face-down for opponents)
     if (!Array.isArray(hand)) return;
     hand.forEach((card, i) => {
       if (!card) return;
-      if (!isMe) {
-        // Other players' cards always show as backs
-        const backEl = mbCard(null, {back: true});
-        if (isSidePlayer) {
-          backEl.style.cssText = 'width:36px;height:52px;margin:1px auto;flex-shrink:0;';
-        }
-        row.appendChild(backEl);
-        return;
-      }
-      const canPlay = isTurn && canPlayCard(seat, i, false);
+      const isOpen = i <= 1; // first 2 cards are always face-up for everyone
+      const isSecret = i >= 2;
+      const isTurn = G.phase==='play' && G.current===seat;
+      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
       const isTrump = G.trump && (
         card.s===G.trump ||
         (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump]))
       );
-      const el = mbCard(card, {
-        isTrump,
-        playable: canPlay,
-        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
-      });
+
+      let el;
+      if (!isMe && isSecret) {
+        // Opponent secret cards: face-down back
+        el = mbCard(null, {back: true});
+      } else if (!isMe && isOpen) {
+        // Opponent open cards: face-up, not playable
+        el = mbCard(card, {isTrump});
+      } else {
+        // My cards: always face-up, playable if it's my turn
+        el = mbCard(card, {isTrump, playable: canPlay, onClick: canPlay ? ()=>window._humanPlayCard(i) : null});
+      }
+
+      if (isSidePlayer) {
+        el.style.cssText = (el.style.cssText||'') + 'width:36px;height:52px;flex-shrink:0;';
+      }
       row.appendChild(el);
     });
 
