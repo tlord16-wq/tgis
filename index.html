@@ -1371,6 +1371,7 @@ function updateTableUI(tableId,data){
         if(!nm){showScr('name');return;}
         haptic('select');
         if(window.fbClaimSeat)window.fbClaimSeat(tableId,s,nm);
+        
       };
     }
   });
@@ -1475,15 +1476,6 @@ function scaleGame(){
 }
 window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
 setTimeout(()=>{ scaleGame(); updateMobileVisibility(); }, 50);
-
-// Expose non-module functions so ES module can call them
-window.updateTableUI = updateTableUI;
-window.renderTablesSkeleton = renderTablesSkeleton;
-window.hideLobby = hideLobby;
-window.showLobby = showLobby;
-window.showScr = showScr;
-window.showSeatedView = showSeatedView;
-window.updateSeatedList = updateSeatedList;
 </script>
 
 <script type="module">
@@ -1506,7 +1498,6 @@ try {
   });
   db = getDatabase(app);
 } catch(e) {
-  console.error("[TGIS] Firebase init failed:", e);
 }
 
 const SUITS=['S','H','D','C'],RANKS=['9','10','J','Q','K','A'];
@@ -2215,38 +2206,12 @@ function showMyBidUI() {
   
 // ── LOBBY ──
 window.fbLoadTables=function(){
-  // Step 1: mark that we entered fbLoadTables
-  ['founders','open','lordsarcade'].forEach(id=>{
-    const b=document.getElementById('tbadge-'+id);
-    if(b){b.textContent='Step1:calling…';b.style.background='#444';}
-  });
-  if(!db){
-    ['founders','open','lordsarcade'].forEach(id=>{
-      const b=document.getElementById('tbadge-'+id);
-      if(b){b.textContent='ERR:db null';b.style.background='red';}
-    });
-    console.error("[TGIS] fbLoadTables: db is null");
-    return;
-  }
-  // Step 2: db exists, starting listener
-  ['founders','open','lordsarcade'].forEach(id=>{
-    const b=document.getElementById('tbadge-'+id);
-    if(b){b.textContent='Step2:listening…';b.style.background='#336';}
-  });
+  if(!db){;return;}
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
   tablesListener=onValue(ref(db,'rooms'),snap=>{
-    // Step 3: snapshot received
     const all=snap.val()||{};
-    ['founders','open','lordsarcade'].forEach(id=>{
-      if(window.updateTableUI) window.updateTableUI(id,all[id]||null);
-    });
-  },err=>{
-    ['founders','open','lordsarcade'].forEach(id=>{
-      const b=document.getElementById('tbadge-'+id);
-      if(b){b.textContent='ERR:'+err.code;b.style.background='red';}
-    });
-    console.error('[TGIS] tables listener error:',err);
-  });
+    ['founders','open','lordsarcade'].forEach(id=>updateTableUI(id,all[id]||null));
+  },err=>);
 };
 
 window.stopTableListener=function(){
@@ -2255,12 +2220,12 @@ window.stopTableListener=function(){
 
 window.fbClearTable=async function(tableId){
   if(!db)return;
-  try{await remove(ref(db,'rooms/'+tableId));}
-  catch(e){}
+  try{await remove(ref(db,'rooms/'+tableId));;}
+  catch(e){;}
 };
 
 window.fbClaimSeat=async function(tableId,seat,name){
-  if(!db){return;}
+  if(!db){;return;}
   mySeat=seat;myTable=tableId;roomRef=ref(db,'rooms/'+tableId);
   if(tablesListener){off(ref(db,'rooms'));tablesListener=null;}
   try{
@@ -2275,17 +2240,17 @@ window.fbClaimSeat=async function(tableId,seat,name){
         // Game in progress - allow rejoin if seat matches our saved session
         const savedSess = (() => { try { return JSON.parse(localStorage.getItem('tgis_session')||'null'); } catch(e){return null;} })();
         const isSavedSeat = savedSess && savedSess.seat===seat && savedSess.tableId===tableId;
-        if(!isSavedSeat){window.fbLoadTables();return;}
+        if(!isSavedSeat){;window.fbLoadTables();return;}
         // Rejoin: update seat with new playerId, restore mySeat
         mySeat=seat; myTable=tableId; isHost=d.host===playerId||!d.host;
         await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:playerId,name,human:true});
         try{localStorage.setItem('tgis_session',JSON.stringify({name,tableId,seat,playerId}));}catch(e){}
         roomSeats={};roomSeats[seat]={id:playerId,name,human:true};
-        window.hideLobby();
+        hideLobby();
         subscribeRoom();
         return;
       }
-      if(d.seats?.[seat]&&d.seats[seat].id!==playerId){window.fbLoadTables();return;}
+      if(d.seats?.[seat]&&d.seats[seat].id!==playerId){;window.fbLoadTables();return;}
       for(const s of ALL_P){
         if(d.seats?.[s]?.id===playerId&&s!==seat)
           await set(ref(db,'rooms/'+tableId+'/seats/'+s),null);
@@ -2298,9 +2263,9 @@ window.fbClaimSeat=async function(tableId,seat,name){
     try { localStorage.setItem('tgis_session', JSON.stringify({name, tableId, seat, playerId})); } catch(e) {}
     const snap2=await get(roomRef);
     roomSeats=snap2.val()?.seats||{};
-    window.showSeatedView(myTable,mySeat,snap2.val()||{});
+    showSeatedView(myTable,mySeat,snap2.val()||{});
     subscribeRoom();
-  }catch(e){}
+  }catch(e){;}
 };
 
 window.fbLeaveSeat=async function(){
@@ -2315,7 +2280,7 @@ window.fbLeaveSeat=async function(){
   }
   mySeat=null;myTable=null;isHost=false;roomRef=null;
   try { localStorage.removeItem('tgis_session'); } catch(e) {}
-  window.showScr('tables');
+  showScr('tables');
   window.fbLoadTables();
 };
 
@@ -2333,8 +2298,8 @@ window.fbReturnToTables=async function(){
   if(roomRef){try{await update(roomRef,{phase:'lobby',gameState:null});}catch(e){}}
   if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
   mySeat=null;myTable=null;isHost=false;roomRef=null;
-  window.showLobby();window.showScr('tables');
-  window.renderTablesSkeleton();
+  showLobby();showScr('tables');
+  renderTablesSkeleton();
   window.fbLoadTables();
 };
 
@@ -2344,9 +2309,9 @@ function subscribeRoom(){
     if(!snap.exists()){window.fbLeaveSeat();return;}
     const d=snap.val();
     if(d.seats)roomSeats=d.seats;
-    window.updateSeatedList(d);
+    updateSeatedList(d);
     if(d.phase==='playing'&&d.gameState){
-      window.hideLobby();
+      hideLobby();
       buildNameMap(roomSeats);
       G=d.gameState;
       // Make sure mySeat is set correctly
@@ -2372,7 +2337,8 @@ async function startGameListener(){
     Object.keys(roomSeats).forEach(s=>{
       if(roomSeats[s]&&roomSeats[s].id===playerId) mySeat=s;
     });
-  }));
+  }
+  ));
   onValue(ref(db,'rooms/'+myTable+'/gameState'),snap=>{
     if(!snap.exists())return;
     const newState=snap.val();
@@ -2454,7 +2420,7 @@ async function processAI(ng){
       if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
       await pushG(ng);
       return;
-    } catch(e){ return; }
+    } catch(e){ ; return; }
   }
 
   if(ng.phase==='bid'){
@@ -2481,7 +2447,9 @@ async function processAI(ng){
     doAIPlayOnState(ng,ng.current);
     await pushG(ng);
     return;
-  }));
+  }
+
+  ));
   if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
@@ -2590,14 +2558,14 @@ window._humanPlayCard =i=>{
     });
     applyPlayCard(ng,mySeat,i,false);
     act(ng);
-  } catch(e) { }
+  } catch(e) { ; }
 };
 window._humanPlayMystery=()=>{
   try {
     const ng=JSON.parse(JSON.stringify(G));
     if(ng.hands) ALL_P.forEach(p=>{if(ng.hands[p]&&!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
     applyPlayCard(ng,mySeat,-1,true);act(ng);
-  } catch(e){}
+  } catch(e){;}
 };
 window.closeModal=closeModal;
 window.returnToTables=()=>{if(window.fbReturnToTables)window.fbReturnToTables();};
