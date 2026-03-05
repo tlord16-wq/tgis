@@ -2386,34 +2386,28 @@ async function startGameListener(){
   });
 }
 
-let _aiRunning = false;
+let _aiSeq = 0;
 
 async function processAI(ng){
   if(!isHost)return;
-  if(_aiRunning){ dbg('processAI: already running, skipping duplicate'); return; }
-  _aiRunning = true;
-  try {
-    await _processAI_inner(ng);
-  } finally {
-    _aiRunning = false;
-  }
-}
-
-async function _processAI_inner(ng){
+  const mySeq = ++_aiSeq;
   const isHuman = seat => roomSeats[seat]&&roomSeats[seat].human===true;
+
   // Don't process if it's a human's turn
   if(ng.phase==='bid'&&ng.bidOrder&&isHuman(ng.bidOrder[ng.bidIdx]))return;
   if(ng.phase==='play'&&ng.current&&isHuman(ng.current))return;
   if(ng.phase==='discard'&&ng.dealer&&isHuman(ng.dealer))return;
+  if(ng.phase==='gameover'){showGameOver(ng);return;}
+
   if(ng.phase==='discard'&&ng.dealer&&!isHuman(ng.dealer)){
     await sleep(400);
+    if(mySeq!==_aiSeq)return; // superseded
     aiDiscardState(ng,ng.dealer);
     applyStartPlay(ng);
-    _aiRunning = false; // release before push so Firebase re-trigger isn't blocked
     await pushG(ng);
     return;
   }
-  if(ng.phase==='gameover'){showGameOver(ng);return;}
+
   if(ng.phase==='resolving'){
     try {
       if(!ng.trick)ng.trick={};
@@ -2422,42 +2416,45 @@ async function _processAI_inner(ng){
       if(!ng.mystUsed)ng.mystUsed={};
       if(!ng.mystBrokeTrump)ng.mystBrokeTrump={};
       ALL_P.forEach(p=>{if(!ng.hands[p])ng.hands[p]=[];else if(!Array.isArray(ng.hands[p]))ng.hands[p]=Object.values(ng.hands[p]).filter(Boolean);});
-      await sleep(1200);applyResolveTrick(ng);
+      await sleep(1200);
+      if(mySeq!==_aiSeq)return; // superseded
+      applyResolveTrick(ng);
       dbg('Resolved trick, new phase='+ng.phase+' trickCount='+ng.trickCount);
-      if(ng.phase==='gameover'){_aiRunning=false;await pushG(ng);showGameOver(ng);return;}
-      _aiRunning = false;
+      if(ng.phase==='gameover'){await pushG(ng);showGameOver(ng);return;}
       await pushG(ng);
       return;
     } catch(e){ dbg('RESOLVE ERROR: '+e.message); return; }
   }
+
   if(ng.phase==='bid'){
     const b=ng.bidOrder?.[ng.bidIdx];
     if(!b){
       if(ng.bidRound===1){ng.bidRound=2;ng.bidIdx=0;}
       else{const forced=SUITS.find(s=>s!==ng.upcard.s);applyNameTrump(ng,ng.dealer,forced);}
-      _aiRunning = false;
       await pushG(ng);
       return;
     }
     if(!isHuman(b)){
       await sleep(650);
+      if(mySeq!==_aiSeq)return; // superseded
       doAIBidOnState(ng,b);
-      _aiRunning = false;
       await pushG(ng);
       return;
     }
     return; // human's turn
   }
+
   if(ng.phase==='play'&&ng.current&&!isHuman(ng.current)){
     dbg('AI playing: '+ng.current);
     await sleep(700);
+    if(mySeq!==_aiSeq)return; // superseded
     doAIPlayOnState(ng,ng.current);
-    _aiRunning = false;
     await pushG(ng);
     return;
   }
-  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' dealer='+ng.dealer+' bidIdx='+ng.bidIdx+' isHuman='+(ng.current&&isHuman(ng.current)));
-  if(ng.phase==='gameover'){showGameOver(ng);_aiRunning=false;await pushG(ng);}
+
+  dbg('processAI waiting: phase='+ng.phase+' current='+ng.current+' dealer='+ng.dealer+' isHuman='+(ng.current&&isHuman(ng.current)));
+  if(ng.phase==='gameover'){showGameOver(ng);await pushG(ng);}
 }
 
 async function act(ng){
@@ -2467,12 +2464,34 @@ async function act(ng){
 }
 
 let lastSeq=-1;
+let _watchdogTimer = null;
 function renderAll_ext(){
   if(!G||!G.hands)return;
   renderAll();
   if(window.isMobile&&window.isMobile()&&window.mbRenderAll) window.mbRenderAll();
   if(G.seq===lastSeq)return;
   lastSeq=G.seq;
+
+  // Watchdog: if host and it's an AI turn, kick processAI after 4s if still stuck
+  if(isHost){
+    if(_watchdogTimer) clearTimeout(_watchdogTimer);
+    const watchSeq = G.seq;
+    _watchdogTimer = setTimeout(()=>{
+      if(G.seq===watchSeq && isHost){
+        const isHumanSeat = s => roomSeats[s]&&roomSeats[s].human===true;
+        const aiStuck =
+          (G.phase==='play' && G.current && !isHumanSeat(G.current)) ||
+          (G.phase==='bid' && G.bidOrder && !isHumanSeat(G.bidOrder[G.bidIdx])) ||
+          (G.phase==='discard' && G.dealer && !isHumanSeat(G.dealer)) ||
+          G.phase==='resolving';
+        if(aiStuck){
+          dbg('Watchdog: kicking stuck AI at seq='+watchSeq+' phase='+G.phase);
+          _aiSeq++; // invalidate any sleeping processAI
+          processAI(JSON.parse(JSON.stringify(G)));
+        }
+      }
+    }, 4000);
+  }
   if(G.phase==='discard'&&G.dealer===mySeat)showDiscardUI();
   if(G.phase==='bid'&&G.bidRound===2){
     const b=G.bidOrder?.[G.bidIdx];
