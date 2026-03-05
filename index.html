@@ -1963,6 +1963,11 @@ function applyEndHand(ng) {
   }
 }
 
+function hasRedealHand(hand) {
+  // All 4 hand cards are 9s and 10s (mystery card not counted)
+  return hand && hand.length === 4 && hand.every(c => c.r === '9' || c.r === '10');
+}
+
 function applyNewHand(ng) {
   const deck = makeDeck();
   const di = ALL_P.indexOf(ng.dealer);
@@ -1987,6 +1992,12 @@ function applyNewHand(ng) {
   ng.bidOrder = [ALL_P[(di2+1)%4], ALL_P[(di2+2)%4], ALL_P[(di2+3)%4], ALL_P[di2]];
   ng.bidRound = 1; ng.bidIdx = 0;
   ng.phase = 'bid';
+}
+
+function applyRedeal(ng) {
+  // Dealer passes to next player, then redeal
+  ng.dealer = ALL_P[(ALL_P.indexOf(ng.dealer)+1)%4];
+  applyNewHand(ng);
 }
 
 // ═══════════════════════════════════════════
@@ -2180,6 +2191,19 @@ function lowestIdx(hand, ng) {
 function showMyBidUI() {
   if (G.phase !== 'bid') return;
   if (G.bidOrder[G.bidIdx] !== mySeat) return;
+  // Redeal check: if this player has all 9s and 10s and is first to bid, offer redeal
+  if (G.bidRound === 1 && G.bidIdx === 0 && hasRedealHand(G.hands[mySeat])) {
+    openActionPanel(`
+      <h2>🔄 Redeal?</h2>
+      <p style="font-size:0.9rem;color:var(--cream)">Your hand is all 9s and 10s!</p>
+      <p style="font-size:0.82rem;color:var(--gold)">You may order a redeal — dealer passes to the next player.</p>
+      <div class="btn-row">
+        <button class="mbtn mbtn-order" onclick="window.humanRedeal()">Order Redeal</button>
+        <button class="mbtn mbtn-pass" onclick="window.humanBidPass1()">Play Anyway</button>
+      </div>
+    `);
+    return;
+  }
   if (G.bidRound === 1) {
     const uc = G.upcard;
     const col = uc.s==='H'||uc.s==='D' ? '#ff7070' : '#f5edd6';
@@ -2438,6 +2462,12 @@ async function processAI(ng){
 
   // Don't process if it's a human's turn
   if(ng.phase==='bid'&&ng.bidOrder&&isHuman(ng.bidOrder[ng.bidIdx]))return;
+  // Check if any player qualifies for a redeal (all 9s and 10s) — only at very start
+  if(ng.phase==='bid'&&ng.bidRound===1&&ng.bidIdx===0){
+    const redealer=ALL_P.find(p=>hasRedealHand(ng.hands[p]));
+    if(redealer&&isHuman(redealer)){return;} // human will see the button
+    if(redealer&&!isHuman(redealer)){applyRedeal(ng);await pushG(ng);processAI(ng);return;}
+  }
   if(ng.phase==='play'&&ng.current&&isHuman(ng.current))return;
   if(ng.phase==='discard'&&ng.dealer&&isHuman(ng.dealer))return;
   if(ng.phase==='gameover'){showGameOver(ng);return;}
@@ -2552,8 +2582,13 @@ function renderAll_ext(){
   if(G.phase==='gameover')showGameOver(G);
   if(G.phase==='bid'){
     const b=G.bidOrder?.[G.bidIdx];
-    if(b&&b!==mySeat)setMsg((NAME[b]||'?')+' is deciding…');
-    else if(b===mySeat) {/* bid UI handles its own message */}
+    if(b&&b!==mySeat){
+      if(G.bidRound===1&&G.bidIdx===0){
+        const redealer=ALL_P.find(p=>p!==mySeat&&hasRedealHand(G.hands[p]));
+        if(redealer){setMsg(NAME[redealer]+' has all 9s & 10s — Redeal!');return;}
+      }
+      setMsg((NAME[b]||'?')+' is deciding…');
+    } else if(b===mySeat) {/* bid UI handles its own message */}
   }else if(G.phase==='discard'){
     if(G.dealer===mySeat) setMsg('Pick a card to discard ▼');
     else setMsg((NAME[G.dealer]||'?')+' is discarding…');
@@ -2641,6 +2676,12 @@ window.humanDiscardMystery=()=>{
   if(!ng.mystRevealed)ng.mystRevealed={};
   ng.mystRevealed[mySeat]=true;
   applyStartPlay(ng);act(ng);
+};
+window.humanRedeal=()=>{
+  closeActionPanel();
+  const ng=JSON.parse(JSON.stringify(G));
+  applyRedeal(ng);
+  act(ng);
 };
 window.humanBidOrder=a=>window._hBO&&window._hBO(a);
 window.humanBidPass1=()=>window._hBP1&&window._hBP1();
