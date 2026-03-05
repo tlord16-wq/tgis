@@ -1145,7 +1145,7 @@ body.desktop-mode {
 // ═══════════════════════════════════════════════════════════
 
 // Haptic feedback helper
-function haptic(type) {
+window.haptic = function haptic(type) {
   if (!navigator.vibrate) return;
   const patterns = {
     tap:    [10],
@@ -1206,265 +1206,12 @@ let myName='';
 function dbg(msg){ const el=document.getElementById('debug'); if(el){el.style.display='block';el.textContent=msg;} console.log('[TGIS]',msg); }
 
 // ── MOBILE BOARD RENDERER ──
-window.mbRenderAll = () => {}; // placeholder
+// mbCard and mbRenderAll are defined inside the ES module (need access to G, mySeat, NAME, etc.)
+window.mbRenderAll = () => {}; // overwritten by module
 
-function mbCard(card, opts={}) {
-  const SYM = {'S':'♠','H':'♥','D':'♦','C':'♣'};
-  const el = document.createElement('div');
-  if (opts.back || opts.mystery) {
-    el.className = 'mb-card ' + (opts.mystery ? 'mystery-back' : 'back');
-  } else if (card) {
-    const isRed = card.s === 'H' || card.s === 'D';
-    el.className = 'mb-card ' + (isRed ? 'red' : 'black');
-    if (opts.isTrump) el.classList.add('trump-card');
-    el.innerHTML = `<div class="mc-top">${card.r}${SYM[card.s]}</div><div class="mc-mid">${SYM[card.s]}</div><div class="mc-bot">${card.r}${SYM[card.s]}</div>`;
-  }
-  if (opts.playable) {
-    el.classList.add('playable');
-    el.addEventListener('touchstart', e => { e.preventDefault(); haptic('tap'); }, {passive:false});
-    el.addEventListener('click', () => { haptic('play'); opts.onClick && opts.onClick(); });
-  }
-  return el;
-}
-
-function mbRenderAll() {
-  if (!window.isMobile || !window.isMobile() || !G || !G.phase) return;
-  const sym = {'S':'♠','H':'♥','D':'♦','C':'♣'};
-
-  // Update top bar scores
-  const myTeam = mySeat ? ((mySeat==='south'||mySeat==='north') ? 0 : 1) : 0;
-  const usScore = (G.scores||[0,0])[myTeam];
-  const themScore = (G.scores||[0,0])[1-myTeam];
-
-  const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
-  setEl('mb-score-us', usScore);
-  setEl('mb-score-them', themScore);
-
-  const fillUs = document.getElementById('mb-fill-us');
-  const fillThem = document.getElementById('mb-fill-them');
-  if(fillUs) fillUs.style.width = Math.min(100, usScore*10) + '%';
-  if(fillThem) fillThem.style.width = Math.min(100, themScore*10) + '%';
-
-  const chipUs = document.getElementById('mb-chip-us');
-  const chipThem = document.getElementById('mb-chip-them');
-  if(chipUs) chipUs.classList.toggle('winning', usScore > themScore);
-  if(chipThem) chipThem.classList.toggle('winning', themScore > usScore);
-
-  // Score labels
-  const usTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
-    (NAME.south||'S')+'/'+(NAME.north||'N') :
-    (NAME.west||'W')+'/'+(NAME.east||'E')) : 'Us';
-  const themTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
-    (NAME.west||'W')+'/'+(NAME.east||'E') :
-    (NAME.south||'S')+'/'+(NAME.north||'N')) : 'Them';
-  setEl('mb-chip-us-lbl', usTeamName.length > 7 ? 'Us' : usTeamName);
-  setEl('mb-chip-them-lbl', themTeamName.length > 7 ? 'Them' : themTeamName);
-
-  // Trump badge
-  const trumpBadge = document.getElementById('mb-trump-badge');
-  if(trumpBadge) {
-    if(G.trump) {
-      trumpBadge.textContent = sym[G.trump] + ' ' + G.trump;
-      trumpBadge.classList.add('has-trump');
-    } else {
-      trumpBadge.textContent = '—';
-      trumpBadge.classList.remove('has-trump');
-    }
-  }
-
-  // Info bar
-  setEl('mb-maker', G.maker ? (NAME[G.maker]||G.maker) : '—');
-  setEl('mb-tricks', G.trickWins ? G.trickWins[0]+'-'+G.trickWins[1] : '—');
-  setEl('mb-phase', G.phase === 'bid' ? 'Bidding' : G.phase === 'play' ? 'Playing' : G.phase === 'discard' ? 'Discard' : (G.phase||'—'));
-
-  // Render zones
-  const ZONES = {north:'mb-north', south:'mb-south', west:'mb-west', east:'mb-east'};
-  ALL_P.forEach(seat => {
-    const zone = document.getElementById(ZONES[seat]);
-    if (!zone) return;
-    zone.innerHTML = '';
-    const hand = G.hands && G.hands[seat] ? G.hands[seat] : [];
-    const isMe = seat === mySeat;
-    const isTurn = G.phase==='play' && G.current===seat;
-    const isDealer = seat === G.dealer;
-    const isSidePlayer = seat === 'west' || seat === 'east';
-
-    // Player info row
-    const playerRow = document.createElement('div');
-    playerRow.className = 'mb-player-row';
-    const lbl = document.createElement('div');
-    lbl.className = 'mb-player-label' + (isMe?' is-you':'') + (isTurn?' is-active':'');
-    lbl.textContent = (NAME[seat]||seat) + (isMe?' ✦':'');
-    playerRow.appendChild(lbl);
-    if(isDealer) {
-      const d = document.createElement('div');
-      d.className = 'mb-dealer-chip';
-      d.textContent = 'D';
-      playerRow.appendChild(d);
-    }
-
-    // Cards row
-    const row = document.createElement('div');
-    row.style.cssText = isSidePlayer
-      ? 'display:flex;flex-direction:column;gap:3px;align-items:center;'
-      : 'display:flex;gap:3px;flex-wrap:nowrap;justify-content:center;align-items:flex-end;';
-
-    // Mystery card
-    if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
-      const canM = isMe && isTurn && !G.mystUsed?.[seat];
-      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
-      const mWrap = document.createElement('div');
-      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
-      mWrap.appendChild(mEl);
-      const mLbl = document.createElement('div');
-      mLbl.className = 'mb-mystery-label';
-      mLbl.textContent = '✦';
-      mWrap.appendChild(mLbl);
-      row.appendChild(mWrap);
-    }
-
-    // Hand cards
-    hand.forEach((card, i) => {
-      if (!card) return;
-      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
-      const isTrump = G.trump && (
-        card.s===G.trump ||
-        (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump]))
-      );
-      const el = mbCard(card, {
-        isTrump,
-        playable: canPlay,
-        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
-      });
-      if (!isMe) { el.className = 'mb-card back'; }
-      row.appendChild(el);
-    });
-
-    // Side players: stack name above cards
-    if (isSidePlayer) {
-      zone.appendChild(playerRow);
-      zone.appendChild(row);
-    } else if (isMe) {
-      zone.appendChild(playerRow);
-      zone.appendChild(row);
-    } else {
-      zone.appendChild(playerRow);
-      zone.appendChild(row);
-    }
-  });
-
-  // Center: upcard or trick
-  const center = document.getElementById('mb-center');
-  if (!center) return;
-
-  // Keep the deco, clear everything else
-  const deco = center.querySelector('.mb-center-deco');
-  center.innerHTML = '';
-  if(deco) center.appendChild(deco);
-
-  if (G.phase === 'bid' || G.phase === 'discard') {
-    if (G.upcard) {
-      const area = document.createElement('div');
-      area.className = 'mb-upcard-area';
-      const lbl = document.createElement('div');
-      lbl.className = 'mb-upcard-lbl';
-      lbl.textContent = 'Upcard';
-      area.appendChild(lbl);
-      area.appendChild(mbCard(G.upcard, {}));
-      center.appendChild(area);
-    }
-  } else if (G.phase === 'play' || G.phase === 'resolving') {
-    const trick = G.trick || {};
-    const trickArea = document.createElement('div');
-    trickArea.className = 'mb-trick-area';
-
-    // North slot
-    const nRow = document.createElement('div');
-    nRow.className = 'mb-trick-row';
-    if (trick.north) {
-      const c = mbCard(trick.north.card, {});
-      c.classList.add('trick-card');
-      nRow.appendChild(c);
-    } else {
-      const s = document.createElement('div');
-      s.className = 'mb-trick-slot';
-      nRow.appendChild(s);
-    }
-    trickArea.appendChild(nRow);
-
-    // W+E row
-    const mRow = document.createElement('div');
-    mRow.className = 'mb-trick-row';
-    mRow.style.gap = '24px';
-    if (trick.west) {
-      const c = mbCard(trick.west.card, {});
-      c.classList.add('trick-card');
-      mRow.appendChild(c);
-    } else {
-      const s = document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s);
-    }
-    if (trick.east) {
-      const c = mbCard(trick.east.card, {});
-      c.classList.add('trick-card');
-      mRow.appendChild(c);
-    } else {
-      const s = document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s);
-    }
-    trickArea.appendChild(mRow);
-
-    // South slot
-    const sRow = document.createElement('div');
-    sRow.className = 'mb-trick-row';
-    if (trick.south) {
-      const c = mbCard(trick.south.card, {});
-      c.classList.add('trick-card');
-      sRow.appendChild(c);
-    } else {
-      const s = document.createElement('div'); s.className='mb-trick-slot'; sRow.appendChild(s);
-    }
-    trickArea.appendChild(sRow);
-
-    center.appendChild(trickArea);
-  }
-}
-
-// Hook setMsg to also update mobile
-function setMsg(t) {
-  const el = document.getElementById('msg-bar'); if(el) el.textContent = t;
-  const mel = document.getElementById('mb-msg'); if(mel) {
-    mel.textContent = t;
-    // Highlight if it's your turn
-    const isMyTurn = G && (
-      (G.phase==='play' && G.current===mySeat) ||
-      (G.phase==='bid' && G.bidOrder && G.bidOrder[G.bidIdx]===mySeat) ||
-      (G.phase==='discard' && G.dealer===mySeat)
-    );
-    mel.classList.toggle('your-turn', !!isMyTurn);
-  }
-}
-
-// Mobile board visibility
-function updateMobileVisibility() {
-  const mb = document.getElementById('mobile-board');
-  const gs = document.getElementById('game-scaler');
-  const lobby = document.getElementById('lobby');
-  if (!mb) return;
-  const onMobile = isMobile();
-  const inGame = lobby && lobby.style.display === 'none';
-
-  if (onMobile) {
-    document.body.classList.remove('desktop-mode');
-    mb.style.display = (inGame) ? 'flex' : 'none';
-    if (gs) { gs.style.visibility='hidden'; gs.style.position='absolute'; gs.style.pointerEvents='none'; }
-  } else {
-    document.body.classList.add('desktop-mode');
-    mb.style.display = 'none';
-    if (gs) { gs.style.visibility=''; gs.style.position=''; gs.style.pointerEvents=''; }
-  }
-}
-window.mbRenderAll = mbRenderAll;
+// window.mbRenderAll is set inside the ES module
 window.updateMobileVisibility = updateMobileVisibility;
-window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); mbRenderAll(); });
+window.addEventListener('resize', () => { scaleGame(); updateMobileVisibility(); if(window.mbRenderAll) window.mbRenderAll(); });
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(e=>e.classList.remove('active'));
@@ -1952,7 +1699,18 @@ function renderAll() {
   }
 }
 
-function setMsg(t) { document.getElementById('msg-bar').textContent = t; }
+function setMsg(t) {
+  const el = document.getElementById('msg-bar'); if(el) el.textContent = t;
+  const mel = document.getElementById('mb-msg'); if(mel) {
+    mel.textContent = t;
+    const isMyTurn = mySeat && G && (
+      (G.phase==='play' && G.current===mySeat) ||
+      (G.phase==='bid' && G.bidOrder && G.bidOrder[G.bidIdx]===mySeat) ||
+      (G.phase==='discard' && G.dealer===mySeat)
+    );
+    mel.classList.toggle('your-turn', !!isMyTurn);
+  }
+}
 
 function openActionPanel(html) {
   const p = document.getElementById('action-panel');
@@ -2874,6 +2632,192 @@ window.humanBidPass1=()=>window._hBP1&&window._hBP1();
 window.humanBidPass2=()=>window._hBP2&&window._hBP2();
 window.humanNameSuit=s=>window._hNS&&window._hNS(s);
 window.humanNameSuitAlone=s=>window._hNSA&&window._hNSA(s);
+
+
+// ═══════════════════════════════════════════
+// MOBILE BOARD RENDERER (inside module for G/mySeat/NAME/ALL_P/canPlayCard access)
+// ═══════════════════════════════════════════
+function mbCard(card, opts={}) {
+  const el = document.createElement('div');
+  if (opts.back || opts.mystery) {
+    el.className = 'mb-card ' + (opts.mystery ? 'mystery-back' : 'back');
+  } else if (card) {
+    const isRed = card.s === 'H' || card.s === 'D';
+    el.className = 'mb-card ' + (isRed ? 'red' : 'black');
+    if (opts.isTrump) el.classList.add('trump-card');
+    el.innerHTML = `<div class="mc-top">${card.r}${SYM[card.s]}</div><div class="mc-mid">${SYM[card.s]}</div><div class="mc-bot">${card.r}${SYM[card.s]}</div>`;
+  }
+  if (opts.playable) {
+    el.classList.add('playable');
+    el.addEventListener('touchstart', e => { e.preventDefault(); if(window.haptic) window.haptic('tap'); }, {passive:false});
+    el.addEventListener('click', () => { if(window.haptic) window.haptic('play'); opts.onClick && opts.onClick(); });
+  }
+  return el;
+}
+
+function mbRenderAll_impl() {
+  if (!window.isMobile || !window.isMobile() || !G || !G.phase) return;
+
+  // Update top bar scores
+  const myTeam = mySeat ? ((mySeat==='south'||mySeat==='north') ? 0 : 1) : 0;
+  const usScore = (G.scores||[0,0])[myTeam];
+  const themScore = (G.scores||[0,0])[1-myTeam];
+
+  const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+  setEl('mb-score-us', usScore);
+  setEl('mb-score-them', themScore);
+
+  const fillUs = document.getElementById('mb-fill-us');
+  const fillThem = document.getElementById('mb-fill-them');
+  if(fillUs) fillUs.style.width = Math.min(100, usScore*10) + '%';
+  if(fillThem) fillThem.style.width = Math.min(100, themScore*10) + '%';
+
+  const chipUs = document.getElementById('mb-chip-us');
+  const chipThem = document.getElementById('mb-chip-them');
+  if(chipUs) chipUs.classList.toggle('winning', usScore > themScore);
+  if(chipThem) chipThem.classList.toggle('winning', themScore > usScore);
+
+  // Score labels
+  const usTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
+    (NAME.south||'S')+'/'+(NAME.north||'N') :
+    (NAME.west||'W')+'/'+(NAME.east||'E')) : 'Us';
+  const themTeamName = mySeat ? ((mySeat==='south'||mySeat==='north') ?
+    (NAME.west||'W')+'/'+(NAME.east||'E') :
+    (NAME.south||'S')+'/'+(NAME.north||'N')) : 'Them';
+  setEl('mb-chip-us-lbl', usTeamName.length > 7 ? 'Us' : usTeamName);
+  setEl('mb-chip-them-lbl', themTeamName.length > 7 ? 'Them' : themTeamName);
+
+  // Trump badge
+  const trumpBadge = document.getElementById('mb-trump-badge');
+  if(trumpBadge) {
+    if(G.trump) {
+      trumpBadge.textContent = SYM[G.trump] + ' ' + G.trump;
+      trumpBadge.classList.add('has-trump');
+    } else {
+      trumpBadge.textContent = '\u2014';
+      trumpBadge.classList.remove('has-trump');
+    }
+  }
+
+  // Info bar
+  setEl('mb-maker', G.maker ? (NAME[G.maker]||G.maker) : '\u2014');
+  setEl('mb-tricks', G.trickWins ? G.trickWins[0]+'-'+G.trickWins[1] : '\u2014');
+  setEl('mb-phase', G.phase === 'bid' ? 'Bidding' : G.phase === 'play' ? 'Playing' : G.phase === 'discard' ? 'Discard' : (G.phase||'\u2014'));
+
+  // Render player zones
+  const ZONES = {north:'mb-north', south:'mb-south', west:'mb-west', east:'mb-east'};
+  ALL_P.forEach(seat => {
+    const zone = document.getElementById(ZONES[seat]);
+    if (!zone) return;
+    zone.innerHTML = '';
+    const hand = G.hands && G.hands[seat] ? G.hands[seat] : [];
+    const isMe = seat === mySeat;
+    const isTurn = G.phase==='play' && G.current===seat;
+    const isDealer = seat === G.dealer;
+    const isSidePlayer = seat === 'west' || seat === 'east';
+
+    // Player info row
+    const playerRow = document.createElement('div');
+    playerRow.className = 'mb-player-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'mb-player-label' + (isMe?' is-you':'') + (isTurn?' is-active':'');
+    lbl.textContent = (NAME[seat]||seat) + (isMe?' \u2736':'');
+    playerRow.appendChild(lbl);
+    if(isDealer) {
+      const d = document.createElement('div');
+      d.className = 'mb-dealer-chip';
+      d.textContent = 'D';
+      playerRow.appendChild(d);
+    }
+
+    // Cards row
+    const row = document.createElement('div');
+    row.style.cssText = isSidePlayer
+      ? 'display:flex;flex-direction:column;gap:3px;align-items:center;'
+      : 'display:flex;gap:3px;flex-wrap:nowrap;justify-content:center;align-items:flex-end;';
+
+    // Mystery card
+    if (!G.mystUsed?.[seat] && G.myst?.[seat]) {
+      const canM = isMe && isTurn && !G.mystUsed?.[seat];
+      const mEl = mbCard(null, {mystery:true, playable:canM, onClick: canM ? ()=>window._humanPlayMystery() : null});
+      const mWrap = document.createElement('div');
+      mWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
+      mWrap.appendChild(mEl);
+      const mLbl = document.createElement('div');
+      mLbl.className = 'mb-mystery-label';
+      mLbl.textContent = '\u2736';
+      mWrap.appendChild(mLbl);
+      row.appendChild(mWrap);
+    }
+
+    // Hand cards
+    if (!Array.isArray(hand)) return;
+    hand.forEach((card, i) => {
+      if (!card) return;
+      const canPlay = isMe && isTurn && canPlayCard(seat, i, false);
+      const isTrump = G.trump && (
+        card.s===G.trump ||
+        (card.r==='J' && card.s===({S:'C',C:'S',H:'D',D:'H'}[G.trump]))
+      );
+      const el = mbCard(card, {
+        isTrump,
+        playable: canPlay,
+        onClick: canPlay ? ()=>window._humanPlayCard(i) : null
+      });
+      if (!isMe) { el.className = 'mb-card back'; }
+      row.appendChild(el);
+    });
+
+    zone.appendChild(playerRow);
+    zone.appendChild(row);
+  });
+
+  // Center: upcard or trick
+  const center = document.getElementById('mb-center');
+  if (!center) return;
+  const deco = center.querySelector('.mb-center-deco');
+  center.innerHTML = '';
+  if(deco) center.appendChild(deco);
+
+  if (G.phase === 'bid' || G.phase === 'discard') {
+    if (G.upcard) {
+      const area = document.createElement('div');
+      area.className = 'mb-upcard-area';
+      const lbl = document.createElement('div');
+      lbl.className = 'mb-upcard-lbl';
+      lbl.textContent = 'Upcard';
+      area.appendChild(lbl);
+      area.appendChild(mbCard(G.upcard, {}));
+      center.appendChild(area);
+    }
+  } else if (G.phase === 'play' || G.phase === 'resolving') {
+    const trick = G.trick || {};
+    const trickArea = document.createElement('div');
+    trickArea.className = 'mb-trick-area';
+
+    const nRow = document.createElement('div'); nRow.className = 'mb-trick-row';
+    if (trick.north) { const c=mbCard(trick.north.card,{}); c.classList.add('trick-card'); nRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; nRow.appendChild(s); }
+    trickArea.appendChild(nRow);
+
+    const mRow = document.createElement('div'); mRow.className='mb-trick-row'; mRow.style.gap='24px';
+    if (trick.west) { const c=mbCard(trick.west.card,{}); c.classList.add('trick-card'); mRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s); }
+    if (trick.east) { const c=mbCard(trick.east.card,{}); c.classList.add('trick-card'); mRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; mRow.appendChild(s); }
+    trickArea.appendChild(mRow);
+
+    const sRow = document.createElement('div'); sRow.className='mb-trick-row';
+    if (trick.south) { const c=mbCard(trick.south.card,{}); c.classList.add('trick-card'); sRow.appendChild(c); }
+    else { const s=document.createElement('div'); s.className='mb-trick-slot'; sRow.appendChild(s); }
+    trickArea.appendChild(sRow);
+
+    center.appendChild(trickArea);
+  }
+}
+
+// Override the window.mbRenderAll placeholder with the real implementation
+window.mbRenderAll = mbRenderAll_impl;
 
 dbg('Module ready ✓');
 
