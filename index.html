@@ -1479,6 +1479,11 @@ setTimeout(()=>{ scaleGame(); updateMobileVisibility(); }, 50);
 // Expose non-module functions so ES module can call them
 window.updateTableUI = updateTableUI;
 window.renderTablesSkeleton = renderTablesSkeleton;
+window.hideLobby = hideLobby;
+window.showLobby = showLobby;
+window.showScr = showScr;
+window.showSeatedView = showSeatedView;
+window.updateSeatedList = updateSeatedList;
 </script>
 
 <script type="module">
@@ -2252,7 +2257,7 @@ window.fbClaimSeat=async function(tableId,seat,name){
         await set(ref(db,'rooms/'+tableId+'/seats/'+seat),{id:playerId,name,human:true});
         try{localStorage.setItem('tgis_session',JSON.stringify({name,tableId,seat,playerId}));}catch(e){}
         roomSeats={};roomSeats[seat]={id:playerId,name,human:true};
-        hideLobby();
+        window.hideLobby();
         subscribeRoom();
         return;
       }
@@ -2269,7 +2274,7 @@ window.fbClaimSeat=async function(tableId,seat,name){
     try { localStorage.setItem('tgis_session', JSON.stringify({name, tableId, seat, playerId})); } catch(e) {}
     const snap2=await get(roomRef);
     roomSeats=snap2.val()?.seats||{};
-    showSeatedView(myTable,mySeat,snap2.val()||{});
+    window.showSeatedView(myTable,mySeat,snap2.val()||{});
     subscribeRoom();
   }catch(e){}
 };
@@ -2286,7 +2291,7 @@ window.fbLeaveSeat=async function(){
   }
   mySeat=null;myTable=null;isHost=false;roomRef=null;
   try { localStorage.removeItem('tgis_session'); } catch(e) {}
-  showScr('tables');
+  window.showScr('tables');
   window.fbLoadTables();
 };
 
@@ -2304,8 +2309,8 @@ window.fbReturnToTables=async function(){
   if(roomRef){try{await update(roomRef,{phase:'lobby',gameState:null});}catch(e){}}
   if(roomListener){off(ref(db,'rooms/'+myTable));roomListener=null;}
   mySeat=null;myTable=null;isHost=false;roomRef=null;
-  showLobby();showScr('tables');
-  renderTablesSkeleton();
+  window.showLobby();window.showScr('tables');
+  window.renderTablesSkeleton();
   window.fbLoadTables();
 };
 
@@ -2315,9 +2320,9 @@ function subscribeRoom(){
     if(!snap.exists()){window.fbLeaveSeat();return;}
     const d=snap.val();
     if(d.seats)roomSeats=d.seats;
-    updateSeatedList(d);
+    window.updateSeatedList(d);
     if(d.phase==='playing'&&d.gameState){
-      hideLobby();
+      window.hideLobby();
       buildNameMap(roomSeats);
       G=d.gameState;
       // Make sure mySeat is set correctly
