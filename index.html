@@ -1964,8 +1964,10 @@ function applyEndHand(ng) {
 }
 
 function hasRedealHand(hand) {
-  // All 4 hand cards are 9s and 10s (mystery card not counted)
-  return hand && hand.length === 4 && hand.every(c => c.r === '9' || c.r === '10');
+  // Normalize: Firebase may return hand as object instead of array
+  const cards = Array.isArray(hand) ? hand : (hand ? Object.values(hand).filter(Boolean) : []);
+  // Must have exactly 4 cards, ALL of which are 9s or 10s
+  return cards.length === 4 && cards.every(c => c && (c.r === '9' || c.r === '10'));
 }
 
 function applyNewHand(ng) {
@@ -2583,10 +2585,6 @@ function renderAll_ext(){
   if(G.phase==='bid'){
     const b=G.bidOrder?.[G.bidIdx];
     if(b&&b!==mySeat){
-      if(G.bidRound===1&&G.bidIdx===0){
-        const redealer=ALL_P.find(p=>p!==mySeat&&hasRedealHand(G.hands[p]));
-        if(redealer){setMsg(NAME[redealer]+' has all 9s & 10s — Redeal!');return;}
-      }
       setMsg((NAME[b]||'?')+' is deciding…');
     } else if(b===mySeat) {/* bid UI handles its own message */}
   }else if(G.phase==='discard'){
